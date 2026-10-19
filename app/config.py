@@ -11,18 +11,20 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(min_length=16)
     DATABASE_URL: str = "sqlite:///./app.db"
 
-    # C: Groq 서버 전용 API
-    GROQ_API_KEY: str = ""
-    GROQ_MODEL: str = "openai/gpt-oss-20b"
-    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
-    GROQ_TIMEOUT_SECONDS: float = Field(default=30, gt=0)
-    GROQ_MAX_COMPLETION_TOKENS: int = Field(default=6000, ge=128, le=16000)
+    # C: Codyssey 서버 전용 API
+    LLM_API_KEY: str = ""
+    LLM_MODEL: str = "gpt-5-mini"
+    LLM_BASE_URL: str = "https://copa.codyssey.kr/v1"
+    LLM_TIMEOUT_SECONDS: float = Field(default=50, gt=0)
+    LLM_MAX_COMPLETION_TOKENS: int = Field(default=8000, ge=128, le=16000)
+
+    LLM_JSON_MODE: bool = False
 
     # Reels: 교육용 NC 자료는 상업용 scope에서 검색되지 않는다.
     KNOWLEDGE_USAGE_SCOPE: str = "educational_noncommercial"
     SESSION_HTTPS_ONLY: bool = False
     ENABLE_API_DOCS: bool = False
-    CHAT_TOTAL_TIMEOUT_SECONDS: float = Field(default=40, gt=0, le=120)
+    CHAT_TOTAL_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=120)
 
 
 settings = Settings()

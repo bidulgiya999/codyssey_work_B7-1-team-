@@ -191,13 +191,13 @@ class CoreTests(unittest.TestCase):
         self.assertIn("최초 주제",messages[0]["content"])
 
     def test_pending_kim_sources_not_retrieved(self):
-        self.assertEqual(len(self.kb.sources),6)
+        self.assertEqual(len([s for s in self.kb.sources.values() if s["source_id"].startswith("kim-")]),3)
         self.assertTrue(all(not c["source_id"].startswith("kim-") for c in self.kb.cards))
 
     def test_commercial_scope_excludes_nc_cards(self):
         kb=KnowledgeBase(scope="commercial")
         self.assertTrue(kb.cards)
-        self.assertTrue(all(c["source_id"]=="media-studies-101" for c in kb.cards))
+        self.assertTrue(all("NC" not in kb.sources[c["source_id"]]["license"] for c in kb.cards))
 
     def test_search_does_not_fill_irrelevant_matches(self):
         self.assertEqual(self.kb.search("zzyyxx-nothing"),[])
@@ -218,6 +218,67 @@ class CoreTests(unittest.TestCase):
     def test_schema_json_is_available_for_api_and_model(self):
         self.assertIn("properties",ChatRequest.model_json_schema())
         self.assertIn("scenes",ScriptDraft.model_json_schema()["properties"])
+
+    def test_all_eight_research_topics_have_approved_source_cards(self):
+        for number in range(1, 9):
+            rq = f"rq-{number:02}"
+            self.assertTrue(any(rq in c.get("research_topic_ids", []) for c in self.kb.cards), rq)
+
+    def test_theory_aliases_retrieve_the_relevant_source(self):
+        examples = {"3막구조를 알려줘":"mp-three-act", "프라이타크가 뭐야":"plot-freytag",
+                    "정보격차 이론은?":"curiosity-gap", "서스펜스란?":"suspense-anticipation",
+                    "인지 부하를 줄여줘":"cognitive-load", "몽타주가 궁금해":"mp-montage",
+                    "연속편집 원리":"mp-continuity", "편집리듬 조절":"mp-rhythm",
+                    "Show, Don’t Tell":"show-action", "프롬프트 구조화":"prompt-decomposition",
+                    "암묵지를 규칙화":"tacit-elicitation", "지각적유창성":"aesthetic-fluency",
+                    "창의성 평가":"creativity-criteria"}
+        for query, expected in examples.items():
+            with self.subTest(query=query):
+                self.assertIn(expected, [c["card_id"] for c in self.kb.search(query)])
+
+    def test_explicit_theory_outranks_old_conversation_context(self):
+        cards = self.kb.search("몽타주가 뭐야", context="시청자 타겟 공감 목적 정보 연출 대본 구조")
+        self.assertEqual(cards[0]["card_id"], "mp-montage")
+
+    def test_explanation_passes_retrieved_evidence_and_returns_provenance(self):
+        output = {"intent":"explanation", "answer":"연속 편집은 공간과 시간 흐름을 이해하도록 연결합니다.",
+                  "card_ids":["mp-continuity"]}
+        result, calls = self.call(output, message="연속 편집을 설명해줘")
+        data = json.loads(calls[0][1][0]["content"].split("\n", 1)[1])
+        self.assertIn("mp-continuity", [c["card_id"] for c in data["reference_cards"]])
+        self.assertEqual(result["references"][0]["source_id"], "moving-pictures")
+        self.assertTrue(result["references"][0]["limitations"])
+
+    def test_explanation_without_citation_abstains_instead_of_asserting(self):
+        result, _ = self.call({"intent":"explanation", "answer":"근거 없는 성과 100% 보장"}, message="인지부하 설명")
+        self.assertNotIn("100%", result["answer"])
+        self.assertIn("근거를 확인하지 못했습니다", result["answer"])
+        self.assertEqual(result["references"], [])
+
+    def test_pdf_pages_and_source_url_resolve_without_invented_file_hash(self):
+        cards = self.kb.search("서스펜스")
+        ref = self.kb.references(["suspense-anticipation"], cards)[0]
+        self.assertEqual((ref["pdf_page_start"], ref["pdf_page_end"]), (10, 10))
+        self.assertEqual(ref["url"], ref["pdf_url"])
+        self.assertIsNone(self.kb.sources[ref["source_id"]]["source_sha256"])
+        with tempfile.TemporaryDirectory(dir=os.environ.get("REELS_TEST_TMPDIR")) as folder:
+            path = Path(folder)
+            (path / "sources.json").write_bytes((DATA_DIR / "sources.json").read_bytes())
+            damaged = dict(next(c for c in cards if c["card_id"] == "suspense-anticipation"))
+            damaged["locator"] = {**damaged["locator"], "pdf_page_end": 999}
+            (path / "cards.jsonl").write_text(json.dumps(damaged), encoding="utf-8")
+            with self.assertRaises(ValueError):
+                KnowledgeBase(path)
+
+    def test_unapproved_license_is_not_retrieved(self):
+        with tempfile.TemporaryDirectory(dir=os.environ.get("REELS_TEST_TMPDIR")) as folder:
+            path = Path(folder)
+            source = dict(self.kb.sources["media-studies-101"])
+            source["license"] = "CC BY-NC-ND 4.0"
+            (path / "sources.json").write_text(json.dumps([source]), encoding="utf-8")
+            card = next(c for c in self.kb.cards if c["source_id"] == source["source_id"])
+            (path / "cards.jsonl").write_text(json.dumps(card), encoding="utf-8")
+            self.assertEqual(KnowledgeBase(path).cards, [])
 
 
 if __name__ == "__main__":

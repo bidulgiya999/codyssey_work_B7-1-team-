@@ -54,24 +54,29 @@ function renderScript(script, references) {
   if (script.change_summary) block.append(element('p',`수정 내용: ${script.change_summary}`,'text'));
   block.append(element('h3','원리와 장면의 연결'));
   for (const item of script.rationale) block.append(element('p',`장면 ${item.scene_nos.join(', ')}: ${item.explanation} [${item.card_ids.join(', ')}]`,'text'));
-  if (references?.length) {
+  if (references?.length) block.append(renderReferences(references));
+  return block;
+}
+function renderReferences(references) {
     const refs = element('div',undefined,'references');
     refs.append(element('h3','참고한 자료'));
     const list = element('ul');
     for (const ref of references) {
       const li = element('li');
-      li.append(sourceLink(ref.url,ref.source_title),document.createTextNode(` · ${ref.author} · ${ref.locator.heading} · ${ref.card_id} · `),
+      const pages = ref.pdf_page_start ? ` · PDF ${ref.pdf_page_start}${ref.pdf_page_end !== ref.pdf_page_start ? '–'+ref.pdf_page_end : ''}쪽` : '';
+      li.append(sourceLink(ref.url,ref.source_title),document.createTextNode(` · ${ref.author} · ${ref.locator.heading}${pages} · ${ref.card_id} · `),
         sourceLink(ref.license_url,ref.license),element('p',ref.changes));
+      if (ref.pdf_url && ref.pdf_url !== ref.url) li.append(sourceLink(ref.pdf_url,'공개 PDF'));
+      if (ref.limitations?.length) li.append(element('p',`적용 범위: ${ref.limitations.join(' ')}`));
       list.append(li);
     }
-    refs.append(list); block.append(refs);
-  }
-  return block;
+    refs.append(list); return refs;
 }
 function bubble(role, text, payload) {
   const box = element('article',undefined,`bubble ${role}`);
   box.append(element('h3',role === 'user' ? '나의 아이디어' : '대본 코치'),element('p',text,'text'));
   if (payload?.script) box.append(renderScript(payload.script,payload.references));
+  else if (payload?.references?.length) box.append(renderReferences(payload.references));
   if (payload?.follow_up_questions?.length) {
     const choices = element('div',undefined,'choices');
     for (const question of payload.follow_up_questions) for (const choice of question.suggestions) {

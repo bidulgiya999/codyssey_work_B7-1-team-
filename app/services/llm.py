@@ -1,4 +1,4 @@
-"""Single server-side Groq Chat Completions request; no implicit retries."""
+"""Single server-side Codyssey Chat Completions request; no implicit retries."""
 
 import httpx
 
@@ -12,7 +12,7 @@ class AIServiceError(Exception):
 
 
 class AIRateLimitError(AIServiceError):
-    """Groq returned HTTP 429; the caller should wait before retrying."""
+    """Codyssey returned HTTP 429; the caller should wait before retrying."""
 
 
 AIError = AIServiceError
@@ -22,24 +22,26 @@ async def ask_llm(system: str, messages: list[dict]) -> str:
     """Send one request. Never expose the provider key to the browser."""
     from app.config import settings
 
-    key = settings.GROQ_API_KEY.strip()
+    key = settings.LLM_API_KEY.strip()
     if not key:
-        raise AIServiceError("GROQ_API_KEY is not configured")
+        raise AIServiceError("LLM_API_KEY is not configured")
 
-    model = settings.GROQ_MODEL.strip()
-    base_url = settings.GROQ_BASE_URL.rstrip("/")
+    model = settings.LLM_MODEL.strip()
+    base_url = settings.LLM_BASE_URL.rstrip("/")
     try:
-        timeout = float(settings.GROQ_TIMEOUT_SECONDS)
+        timeout = float(settings.LLM_TIMEOUT_SECONDS)
         if timeout <= 0:
             raise ValueError
     except ValueError as exc:
-        raise AIServiceError("GROQ_TIMEOUT_SECONDS must be positive") from exc
+        raise AIServiceError("LLM_TIMEOUT_SECONDS must be positive") from exc
     payload = {
         "model": model,
         "messages": [{"role": "system", "content": system}, *messages],
-        "max_completion_tokens": settings.GROQ_MAX_COMPLETION_TOKENS,
-        "response_format": {"type": "json_object"},
+        "max_completion_tokens": settings.LLM_MAX_COMPLETION_TOKENS,
     }
+
+    if settings.LLM_JSON_MODE:
+        payload["response_format"] = {"type": "json_object"}
 
     try:
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -53,7 +55,7 @@ async def ask_llm(system: str, messages: list[dict]) -> str:
         raise AITimeoutError from exc
     except httpx.HTTPStatusError as exc:
         if exc.response.status_code == 429:
-            raise AIRateLimitError("Groq rate limit") from None
+            raise AIRateLimitError("Codyssey rate limit") from None
         raise AIServiceError("AI request failed") from None
     except httpx.HTTPError as exc:
         raise AIServiceError("AI request failed") from exc

@@ -38,6 +38,9 @@ research_agenda는 팀의 연구 질문·대본 점검 제안이며 검증된 �
 이론 이름만으로 정의·인과 효과를 지어내지 않는다. reference_cards가 뒷받침하지 않는 이론 설명은
 현재 확보한 자료로 확인할 수 없다고 알리고, 제작 제안과 학술 근거를 구분한다.
 대본 생성·수정 때 관련된 점검 제안을 참고하되 모든 이론이나 3막 구조를 일괄 적용하지 않는다.
+이론을 설명할 때는 실제 참고한 reference_cards의 card_ids를 반드시 반환한다.
+각 카드의 limitations와 원문 내용, 팀의 application_notes를 구분한다. 후속 연구가 소개한
+이론은 최초 제안자의 원문을 읽은 것처럼 쓰지 않는다. 학습·산업·미술 연구를 릴스 성과로 확대하지 않는다.
 외부 검색이나 최신 플랫폼 정책을 확인했다고 말하지 않는다. 촬영 가능한 텍스트 대본을 제공한다.
 JSON 객체 하나만 반환한다. HTML이나 마크다운 코드 블록을 추가하지 않는다.
 """
@@ -98,11 +101,11 @@ class ReelsCoach:
         if action == "revise" and (phase != "drafted" or not brief.confirmed or not latest_script):
             raise CoachError("SCRIPT_NOT_READY", "확정된 기획과 대본을 먼저 준비해 주세요.", 409)
 
-        query = message + " " + " ".join(filter(None, [brief.topic, brief.goal, brief.direction_style,
+        query = " ".join(filter(None, [brief.topic, brief.goal, brief.direction_style,
                                                         brief.core_message, brief.audience.segment]))
         if action != "message":
             query += " 대본 구조 연출 시청자"
-        cards = self.knowledge.search(query)
+        cards = self.knowledge.search(message, context=query)
         if action != "message" and not cards:
             raise CoachError("KNOWLEDGE_NOT_READY", "사용할 수 있는 이론 자료를 준비 중입니다.", 503)
         data = {"brief": brief.model_dump(), "phase": phase, "reference_cards": cards,
@@ -134,7 +137,10 @@ class ReelsCoach:
                 updated = candidate if changed else brief
                 refs = self.knowledge.references(parsed.card_ids, cards)
                 if parsed.intent == "explanation" and not changed and parsed.answer:
-                    return {"phase": phase, "reply_type": "explanation", "answer": parsed.answer,
+                    answer = parsed.answer if refs else (
+                        "현재 연결된 자료에서 이 설명의 근거를 확인하지 못했습니다. "
+                        "확인 가능한 이론 이름이나 원문을 알려주시면 그 범위에서 도와드릴게요.")
+                    return {"phase": phase, "reply_type": "explanation", "answer": answer,
                             "brief": updated.model_dump(), "missing_fields": updated.missing_fields(),
                             "follow_up_questions": [], "script": None, "references": refs}
                 missing = updated.missing_fields()

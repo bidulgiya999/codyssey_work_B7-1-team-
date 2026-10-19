@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
     paths=[ROOT/"app/main.py",ROOT/"app/models/reels.py",ROOT/"app/routers/reels.py",
            *sorted((ROOT/"app/services/reels").glob("*.py")),*sorted((ROOT/"tests").glob("*.py")),
-           ROOT/"scripts/check_reels_logs.py"]
+           ROOT/"scripts/check_reels_logs.py", ROOT/"scripts/check_knowledge.py"]
     for path in paths:ast.parse(path.read_text(encoding="utf-8-sig"),filename=str(path))
     source_path=ROOT/"app/data/reels/sources.json"
     sources=json.loads(source_path.read_text(encoding="utf-8"))
@@ -20,7 +20,11 @@ def main():
     assert len({c["card_id"] for c in cards})==len(cards)
     for card in cards:
         assert by_id[card["source_id"]]["rights_status"]=="licensed"
-        assert card["url"].startswith("https://") and card["locator"]["type"]=="html_section"
+        assert card["url"].startswith("https://")
+        assert card["locator"]["type"] in {"html_section", "pdf_pages"}
+        assert card["limitations"] and card["application_notes"]
+        if card["locator"]["type"] == "pdf_pages":
+            assert 1 <= card["locator"]["pdf_page_start"] <= card["locator"]["pdf_page_end"] <= by_id[card["source_id"]]["pdf_page_count"]
     for match in re.findall(r"\]\(([^)]+)\)",(ROOT/"README.md").read_text(encoding="utf-8-sig")):
         if not match.startswith(("http:","https:","#")):assert (ROOT/match).is_file(),match
     for forbidden in ["app/reels_main.py","app/services/trend.py","app/routers/chat.py","app/ui.py","docs/LEGACY_README.md"]:

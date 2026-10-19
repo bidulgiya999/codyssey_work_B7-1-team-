@@ -1,4 +1,4 @@
-"""Real ASGI/SQLite integration tests; requires requirements-reels-dev.txt."""
+"""Real ASGI/SQLite integration tests; requires requirements-dev.txt."""
 import importlib.util
 import json
 import os
@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 os.environ["SECRET_KEY"] = "test-only-reels-secret-at-least-32"
 os.environ["DATABASE_URL"] = "sqlite://"
-os.environ["GROQ_API_KEY"] = ""
+os.environ["LLM_API_KEY"] = ""
 os.environ["SESSION_HTTPS_ONLY"] = "false"
 os.environ["ENABLE_API_DOCS"] = "false"
 
@@ -123,6 +123,23 @@ class APITests(unittest.TestCase):
         self.assertEqual(rows[0]["error_code"],"AI_TIMEOUT")
         self.assertIsNone(rows[0]["answer"])
 
+    def test_public_pdf_evidence_is_sent_returned_and_persisted(self):
+        conv = self.conversation()
+        async def ask(system, messages):
+            data = json.loads(messages[0]["content"].split("\n", 1)[1])
+            self.assertIn("suspense-anticipation", [c["card_id"] for c in data["reference_cards"]])
+            return json.dumps({"intent":"explanation", "answer":"불확실성과 서스펜스는 구별됩니다.",
+                               "card_ids":["suspense-anticipation"]})
+        with patch.object(llm, "ask_llm", side_effect=ask):
+            response = self.chat(conv, message="서스펜스 설명")
+        self.assertEqual(response.status_code, 200, response.text)
+        ref = response.json()["references"][0]
+        self.assertEqual(ref["pdf_page_start"], 10)
+        self.assertEqual(ref["license"], "CC BY 4.0")
+        self.assertTrue(ref["limitations"])
+        history = self.client.get(f'/api/me/chats?conversation_id={conv["conversation_id"]}').json()
+        self.assertEqual(history["items"][0]["response"]["references"][0], ref)
+
     def test_provider_and_invalid_json_errors_are_safe(self):
         conv=self.conversation()
         async def failed(*_): raise llm.AIServiceError("upstream private body")
@@ -133,7 +150,7 @@ class APITests(unittest.TestCase):
                 self.assertEqual(result.status_code,502,result.text)
                 self.assertNotIn("upstream private body",result.text)
 
-    def test_groq_rate_limit_preserves_brief_and_releases_lease(self):
+    def test_codyssey_rate_limit_preserves_brief_and_releases_lease(self):
         conv=self.conversation()
         async def limited(*_):raise llm.AIRateLimitError()
         with patch.object(llm,"ask_llm",side_effect=limited):result=self.chat(conv)

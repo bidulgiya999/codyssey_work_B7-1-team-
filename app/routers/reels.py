@@ -27,7 +27,7 @@ Limit = Annotated[int, Query(ge=1, le=100)]
 
 @router.get("/me")
 def me(user=Depends(require_login)):
-    return {"id": user.id, "email": user.email, "ai_provider": "groq", "ai_configured": bool(settings.GROQ_API_KEY)}
+    return {"id": user.id, "email": user.email, "ai_provider": "codyssey", "ai_configured": bool(settings.LLM_API_KEY)}
 
 
 @router.post("/conversations", status_code=201)

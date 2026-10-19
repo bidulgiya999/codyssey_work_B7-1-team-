@@ -1,6 +1,6 @@
 # 릴스 대본 코치 API v1
 
-실행 대상: `app.main:app`. Groq API를 서버에서 호출한다. 날짜: 2026-10-19.
+실행 대상: `app.main:app`. 코디세이 API를 서버에서 호출한다. 날짜: 2026-10-19.
 
 ## 인증·오류
 
@@ -12,7 +12,7 @@
 {"error":"AI_TIMEOUT","message":"응답이 지연되고 있어요. 잠시 후 다시 시도해 주세요.","request_id":"server-generated-uuid"}
 ```
 
-401 비로그인, 404 타인의 대화방·없는 자원, 409 처리 중/버전 충돌/대본 불일치, 422 입력 검증, 429 Groq 한도 초과, 502 AI 실패·응답 검증 실패, 503 DB·자료 준비 실패, 504 AI timeout. 응답의 `X-Request-ID`와 오류·서버 로그 ID를 연결한다. 원문 질문·AI 본문·비밀번호·API 키는 운영 이벤트 로그에 쓰지 않는다.
+401 비로그인, 404 타인의 대화방·없는 자원, 409 처리 중/버전 충돌/대본 불일치, 422 입력 검증, 429 코디세이 한도 초과, 502 AI 실패·응답 검증 실패, 503 DB·자료 준비 실패, 504 AI timeout. 응답의 `X-Request-ID`와 오류·서버 로그 ID를 연결한다. 원문 질문·AI 본문·비밀번호·API 키는 운영 이벤트 로그에 쓰지 않는다.
 
 ## 엔드포인트
 
@@ -81,6 +81,6 @@
 - `complete_turn`: active_request_id·만료·version을 다시 확인하고 조건·답변·대본·출처를 한 트랜잭션으로 저장한다. 버전 +1, 처리 표시 해제.
 - `fail_turn`: 실패 상태만 저장하고 이전 성공 기획·대본·version을 유지한다. 늦은 결과는 새 요청을 덮어쓰지 않는다.
 
-사용자·대화방·질문/응답·대본 버전을 분리하여 관리한다. 근거 위치는 PDF 파일을 확보하지 않은 경우 `locator={type:"html_section",heading:...}`와 URL을 사용한다. PDF 쪽수·파일 해시는 만들지 않는다.
+사용자·대화방·질문/응답·대본 버전을 분리하여 관리한다. 웹 절은 `locator={type:"html_section",heading:...}`로 기록한다. 웹 도구로 PDF 본문의 위치를 확인한 카드는 `locator={type:"pdf_pages",heading:...,pdf_page_start:10,pdf_page_end:10}`을 사용하며 파일 첫 페이지가 1인 기준이다. references에는 pdf_url, pdf_page_start/end, limitations, application_notes, research_topic_ids가 추가된다. PDF를 열람한 것과 로컬 파일을 확보한 것은 구분하며 바이트 해시는 미확보 상태다. 원문 없는 설명은 확인 불가 안내를 반환한다.
 
 질문 1~6000자, 각 기획 문자열 최대 300자, 길이 10~180초는 제품의 초기 지원 범위다. 인스타그램 공식 길이 제한을 의미하지 않는다. 모델/클라이언트의 임의 confirmed=true는 거절한다. 원본 제작 조건은 최근 Q/A와 별도 저장하므로 대화가 길어져도 유지한다.

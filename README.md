@@ -23,7 +23,7 @@ Copy-Item .env.example .env
 .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-.env가 이미 있으면 덮어쓰지 마세요. 생성한 무작위 값을 SECRET_KEY에 입력합니다. [Groq Console](https://console.groq.com/home)의 API Keys에서 발급한 키를 **GROQ_API_KEY**에 넣습니다. 키는 Git·문서·채팅에 올리지 않습니다. 기본 모델은 openai/gpt-oss-20b이며 Groq에서 호스팅하는 모델입니다. 실제 사용할 수 있는 모델은 팀 계정의 목록에서 확인합니다.
+.env가 이미 있으면 덮어쓰지 마세요. 생성한 무작위 값을 SECRET_KEY에 입력하고, 교육과정에서 발급받은 코디세이 API 키를 **LLM_API_KEY**에 넣습니다. 기본 주소 https://copa.codyssey.kr/v1과 모델 gpt-5-mini는 기존 프로젝트의 설정을 따른 값이며, 현재 팀 계정의 안내와 사용 가능한 모델을 확인해야 합니다. 키는 Git·문서·채팅에 올리지 않습니다. [코디세이 설정과 확인 범위](docs/AI_SETUP.md)를 참고하세요.
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -40,8 +40,8 @@ flowchart LR
     STORE --> DB[(SQLite)]
     API --> COACH[사전 질문 / 생성·수정 / 결과 검증]
     COACH --> KB[검토한 개념 카드 검색]
-    COACH --> GROQ[서버의 Groq API 호출]
-    GROQ --> COACH
+    COACH --> LLM[서버의 코디세이 API 호출]
+    LLM --> COACH
     COACH --> STORE
 ```
 
@@ -53,23 +53,24 @@ bcrypt 회원가입과 HttpOnly 서명 세션을 사용합니다. 제작 조건�
 |---|---|
 | SECRET_KEY | 필수 무작위 세션 서명 키 |
 | DATABASE_URL | 기본 sqlite:///./app.db, 운영은 영속 경로 |
-| GROQ_API_KEY | Groq Console에서 발급. 서버에서만 사용 |
-| GROQ_BASE_URL | https://api.groq.com/openai/v1 |
-| GROQ_MODEL | 기본 openai/gpt-oss-20b. 계정에서 사용 가능한 모델 |
-| GROQ_TIMEOUT_SECONDS | HTTP timeout, 기본 30초 |
-| GROQ_MAX_COMPLETION_TOKENS | 출력 예산, 기본 6000 |
-| CHAT_TOTAL_TIMEOUT_SECONDS | AI 처리 총 대기 제한, 기본 40초 |
+| LLM_API_KEY | 교육과정에서 발급받은 키. 서버에서만 사용 |
+| LLM_BASE_URL | https://copa.codyssey.kr/v1 |
+| LLM_MODEL | 기본 gpt-5-mini. 계정에서 사용 가능한 모델 |
+| LLM_TIMEOUT_SECONDS | HTTP timeout, 기본 50초 |
+| LLM_MAX_COMPLETION_TOKENS | 출력 예산, 기본 8000 |
+| LLM_JSON_MODE | 기본 false. 코디세이에서 지원 확인 후 true로 설정 |
+| CHAT_TOTAL_TIMEOUT_SECONDS | AI 처리 총 대기 제한, 기본 60초 |
 | KNOWLEDGE_USAGE_SCOPE | 교육용 비상업 기본. commercial이면 NC 카드 제외 |
 | SESSION_HTTPS_ONLY | 로컬 HTTP false, 운영 HTTPS true |
 | ENABLE_API_DOCS | 기본 false. 로컬 true이면 /docs |
 
-.env·DB·가상환경은 Git에서 제외합니다. 예시에는 실제 키가 없습니다. JSON Object Mode로 응답을 요청하고 별도 서버 검증을 수행합니다. 429 한도 초과·timeout·공급자 오류·잘못된 응답을 사용자에게 안내하며 무제한 재시도하지 않습니다. [Groq 호환 규격](https://console.groq.com/docs/openai), [JSON 출력 안내](https://console.groq.com/docs/structured-outputs).
+.env·DB·가상환경은 Git에서 제외합니다. 예시에는 실제 키가 없습니다. 프롬프트로 JSON 출력을 지시하고 서버에서 형식·장면·출처를 검증합니다. 코디세이 프록시의 response_format 지원은 확인 전이므로 기본 요청에 넣지 않습니다. 429 한도 초과·timeout·공급자 오류·잘못된 응답을 사용자에게 안내하며 무제한 재시도하지 않습니다.
 
 ## 이론 자료
 
-[자료 목록·PDF·이용 조건·적용 방향](docs/THEORY_SOURCES.md)에 후보 6종을 정리했습니다. 김미림 교수님 자료는 원문 재사용 조건 확인 전 서지 후보로 등록했습니다. 초기 검색 카드는 Media Studies 101 2개(CC BY 4.0), Moving Pictures 2개(CC BY-NC-SA 4.0)입니다. [출처·변경 표시](app/data/reels/ATTRIBUTION.md)를 유지합니다.
+[실제 연결 자료·PDF·이용 조건](docs/KNOWLEDGE.md)에 공개 원문 12종과 한국어 개념 카드 21개를 정리했습니다. 사진의 8개 연구 질문에 참고 자료를 연결하고, 현재 질문의 이론 이름을 우선 검색합니다. 설명 답변과 대본에 실제 검색한 출처·관련 절·확인한 PDF 쪽수·적용 한계를 표시합니다. 김미림 교수님 관련 후보 3종은 재사용 조건 확인 전 검색에서 제외합니다. [출처·변경 표시](app/data/reels/ATTRIBUTION.md)를 유지합니다.
 
-자료를 검색해 프롬프트에 제공하는 방식이며 모델 가중치를 학습하지 않았습니다. 초기 카드 검토자는 Codex initial source check이며 팀원의 검토 완료를 뜻하지 않습니다. 원리의 짧은 영상 적용은 제작 제안이며 조회수 향상을 보증하지 않습니다.
+자료를 검색해 프롬프트에 제공하는 방식이며 모델 가중치를 학습하지 않았습니다. 카드 검토자는 Codex이며 팀원의 검토 완료를 뜻하지 않습니다. 연구의 대상·조건과 짧은 영상에 대한 팀의 제작 제안을 구분합니다. 원본 PDF 파일·해시는 로컬에 확보하지 않았으며 검토한 한국어 카드는 저장소에 보관합니다.
 
 ## 검증·DB 확인
 
@@ -78,13 +79,14 @@ bcrypt 회원가입과 HttpOnly 서명 세션을 사용합니다. 제작 조건�
 .\.venv\Scripts\python.exe scripts/check_reels_logs.py --db app.db --user-id 1
 ```
 
-실제 본인 user_id를 사용하세요. 테스트는 실제 외부 AI 호출을 대역으로 분리합니다. API·SQLite 통합 테스트는 서버 의존성이 필요하며 skip을 통과로 계산하지 않습니다. 최신 실행 증거는 [검증 문서](docs/VERIFICATION.md)에 기록합니다. 실제 Groq 응답 품질·브라우저 화면·외부 공개 배포는 아직 확인이 필요합니다.
+실제 본인 user_id를 사용하세요. 테스트는 실제 외부 AI 호출을 대역으로 분리합니다. API·SQLite 통합 테스트는 서버 의존성이 필요하며 skip을 통과로 계산하지 않습니다. 최신 실행 증거는 [검증 문서](docs/VERIFICATION.md)에 기록합니다. 실제 코디세이 응답 품질·브라우저 화면·외부 공개 배포는 아직 확인이 필요합니다.
 
 ## 기술 문서·협업
 
 - [API 요청·응답과 A/B/C 연결 규격](docs/API.md)
 - [제공한 이미지의 8개 연구 주제와 챗봇 적용](docs/RESEARCH_AGENDA.md)
-- [Groq Console 설정](docs/GROQ.md)
+- [공개 원문 12종·카드 21개·검색 확인 방법](docs/KNOWLEDGE.md)
+- [코디세이 API 설정](docs/AI_SETUP.md)
 - [DB·ERD·조회 가이드](docs/DATABASE.md)
 - [Linux 배포·환경 변수](docs/DEPLOY.md)
 - [팀 역할·실제 작업 내역](docs/TEAM.md)

@@ -1,4 +1,4 @@
-"""Groq HTTP contract tests with MockTransport; no external network or real key."""
+"""Codyssey HTTP contract tests with MockTransport; no external network or real key."""
 import importlib.util
 import json
 import os
@@ -8,7 +8,7 @@ from unittest.mock import patch
 from async_runner import run
 
 os.environ["SECRET_KEY"]="test-only-reels-secret-at-least-32"
-os.environ["GROQ_API_KEY"]=""
+os.environ["LLM_API_KEY"]=""
 AVAILABLE=bool(importlib.util.find_spec("httpx") and importlib.util.find_spec("pydantic_settings"))
 if AVAILABLE:
     import httpx
@@ -17,30 +17,39 @@ if AVAILABLE:
 
 
 @unittest.skipUnless(AVAILABLE,"HTTP client dependencies are not installed")
-class GroqGatewayTests(unittest.TestCase):
+class CodysseyGatewayTests(unittest.TestCase):
     def invoke(self,handler):
         original=httpx.AsyncClient
         transport=httpx.MockTransport(handler)
         def factory(**kwargs):return original(transport=transport,**kwargs)
-        with patch.object(settings,"GROQ_API_KEY","test-only-key"),patch.object(llm.httpx,"AsyncClient",side_effect=factory):
+        with patch.object(settings,"LLM_API_KEY","test-only-key"),patch.object(llm.httpx,"AsyncClient",side_effect=factory):
             return run(llm.ask_llm("JSON 객체로 답해 주세요.",[{"role":"user","content":"릴스 기획"}]))
 
-    def test_groq_endpoint_model_auth_and_json_mode(self):
+    def test_codyssey_endpoint_model_auth_and_default_contract(self):
         seen=[]
         def handler(request):
             seen.append(request)
             return httpx.Response(200,json={"choices":[{"message":{"content":"{\"brief_patch\":{}}"},"finish_reason":"stop"}]})
         self.assertEqual(json.loads(self.invoke(handler)),{"brief_patch":{}})
         request=seen[0];body=json.loads(request.content)
-        self.assertEqual(str(request.url),"https://api.groq.com/openai/v1/chat/completions")
+        self.assertEqual(str(request.url),"https://copa.codyssey.kr/v1/chat/completions")
         self.assertEqual(request.headers["Authorization"],"Bearer test-only-key")
-        self.assertEqual(body["model"],settings.GROQ_MODEL)
-        self.assertEqual(body["response_format"],{"type":"json_object"})
-        self.assertEqual(body["max_completion_tokens"],settings.GROQ_MAX_COMPLETION_TOKENS)
+        self.assertEqual(body["model"],settings.LLM_MODEL)
+        self.assertNotIn("response_format",body)
+        self.assertEqual(body["max_completion_tokens"],settings.LLM_MAX_COMPLETION_TOKENS)
         self.assertNotIn("api_key",body)
 
+    def test_json_mode_is_sent_only_when_explicitly_enabled(self):
+        seen = []
+        def handler(request):
+            seen.append(json.loads(request.content))
+            return httpx.Response(200,json={"choices":[{"message":{"content":"{}"}}]})
+        with patch.object(settings, "LLM_JSON_MODE", True):
+            self.invoke(handler)
+        self.assertEqual(seen[0]["response_format"], {"type":"json_object"})
+
     def test_missing_key_does_not_open_client(self):
-        with patch.object(settings,"GROQ_API_KEY",""),patch.object(llm.httpx,"AsyncClient") as client:
+        with patch.object(settings,"LLM_API_KEY",""),patch.object(llm.httpx,"AsyncClient") as client:
             with self.assertRaises(llm.AIServiceError):run(llm.ask_llm("JSON",[]))
             client.assert_not_called()
 

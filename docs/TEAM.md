@@ -6,7 +6,7 @@
 |---|---|---|
 | A | 서비스 기획·UX/UI·화면과 API 연결·사용 설명 | templates/reels, static/css/reels.css, static/js/reels.js |
 | B | 인증·DB·대화·대본 저장/조회·소유권 | 기존 auth/security/user 재사용, models/reels.py, services/reels/store.py, DB 확인 스크립트 |
-| C | 채팅 API·사전 기획·이론 검색·프롬프트·Groq·예외·로그·Linux | routers/reels.py, services/reels/coach.py·schemas.py·knowledge.py, services/llm.py, main.py, 데이터·배포·문서 |
+| C | 채팅 API·사전 기획·이론 검색·프롬프트·코디세이·예외·로그·Linux | routers/reels.py, services/reels/coach.py·schemas.py·knowledge.py, services/llm.py, main.py, 데이터·배포·문서 |
 
 2026-10-19: 사용자 요청으로 Codex가 C 작업 브랜치에서 A/B/C 초기 통합 코드를 작성했다. 위 표는 코드의 담당 영역이며, A·B 팀원이 직접 구현하거나 커밋했다는 뜻이 아니다. 인증·DB 기반과 Git 이력은 원본 `L-jy16/ai_chatbot`을 참고하고 전체 화면·기획·AI 처리를 릴스 대본 코치에 맞췄다. 원본 저자의 기여를 현재 팀의 개인별 실적으로 바꾸지 않는다.
 
