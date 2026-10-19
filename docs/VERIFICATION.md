@@ -1,27 +1,35 @@
 # 릴스 대본 코치 검증 현황 — 2026-10-19
 
-## 최신 실행 결과
+## 최신 코드 검증
 
-- [Linux / Python 3.12 CI](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39228574869)에서 **50개 테스트 모두 통과**, skip 없음.
-- 검증 커밋: `031a256eabb1cc2569a98d8bbc109d4ba76aead8`.
-- 로그: `Ran 50 tests in 11.136s` / `OK`.
-- 코어 29개, API·SQLite 통합 13개, Groq HTTP 계약 8개. 서버 의존성 import 확인과 scripts/verify_reels.py도 통과했다.
-- 기획 대화·대본 생성에 이미지의 8개 연구 주제가 전달되는지, 연구 질문을 검증된 결과로 표시하거나 출처로 인용하면 거절하는지 검증했다.
-- 가입·로그인·로그아웃, 비로그인/타인 접근 차단, 대화방 문맥 분리, 저장 실패·timeout·Groq 429 후 상태 보존, 동시 처리 lease, 생성·수정 버전과 출처 저장을 검증했다.
-- Groq 주소·모델·인증·JSON Object Mode 전달과 키 누락·timeout·429·HTTP 실패·잘못된 JSON·빈 응답·잘린 응답 처리를 대역 HTTP 응답으로 검증했다.
+- [Linux / Python 3.12 CI 실행](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39231795091): **59개 테스트 모두 통과, skip 없음**.
+- 검증 커밋: b7469f90a39d13cb010a8a4825de981da66d04d0.
+- 코어 36개, API·SQLite 통합 14개, 코디세이 HTTP 계약 9개. 서버 의존성 import 사전 확인과 scripts/verify_reels.py도 통과했다.
+- 앞선 자료 연결 커밋 acc71a6f9f08afea03edf683138f4f70622657c6도 [59개 테스트 통과](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39231651192). 그 후 특정 이론 질문에 관련 없는 맥락 카드가 섞이지 않도록 보완한 것이 최신 코드다.
 
-app.main:app이 기본 실행 파일이다. 화면·AI 처리·문서는 릴스 대본 코치로 통일했다. 이전 Groq 전환 커밋 `628f768c43fe0a70731646f557288e7d7b267c9a`도 [47개 테스트가 통과](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39228039496)했다.
+## 검증한 내용
 
-## 로컬 환경과 확인 범위
+- 로그인·로그아웃·가입, 비로그인/타인 접근 차단, 사용자·대화방별 기록 분리.
+- 최근 문맥과 기획 조건 보존, 조건 확인 전 생성 방지, 대본 생성·수정과 버전·출처 저장.
+- 동시 요청 lease, 오래된 버전 차단, AI timeout·429·응답 형식 오류·DB 실패 후 상태 보존.
+- 공개 원문 12종·개념 카드 21개에 대한 검색과 8개 연구 주제의 연결.
+- 한국어 띄어쓰기·영문 별칭, 현재 질문에 명시된 이론을 오래된 맥락보다 우선 검색.
+- 검색 카드가 AI 요청에 전달되고 실제 카드 ID·저자·URL·라이선스·검토한 PDF 쪽수가 응답과 SQLite 대화 로그에 저장되는 ASGI 통합 흐름.
+- 확인하지 않은 연구 질문·검색되지 않은 카드의 인용 거절, 근거 없는 설명의 확인 불가 안내.
+- NC 카드의 상업용 scope 제외, 허용하지 않은 라이선스의 검색 제외, PDF 페이지 범위 검증.
+- 코디세이 요청 주소·Bearer 키·모델·출력 예산, 기본 response_format 미전송과 명시적으로 켠 경우의 전송. 빈 응답·잘림·HTTP 실패·timeout·429 처리를 대역 HTTP로 검증.
+- Python 구문·JSON·자료 연결·문서의 로컬 링크·JavaScript 구문과 Git 변경의 공백 검사 통과.
 
-새 폴더에 소스와 .git을 보관하며 feature/c-ai-deploy 브랜치를 GitHub와 동기화했다. 원본 Desktop 저장소는 변경하지 않았다. JavaScript 구문, Python 구문·JSON·자료 연결·README 링크 검증을 통과했다.
+## 로컬 보관과 실행 호스트 제한
 
-이 실행 호스트에서는 PyPI DNS 오류로 FastAPI·SQLAlchemy·httpx 등 서버 의존성을 설치하지 못했다. Windows asyncio 기본 루프도 내부 loopback 소켓 생성 시 정지하는 현상을 최소 예제로 확인했다. 로컬 코어 29개는 I/O를 거절하는 REELS_TEST_MEMORY_LOOP=1 테스트 루프에서 통과했고, 나머지 21개는 의존성 부재로 skip되었다. **skip을 통과로 계산하지 않는다.** 위 CI는 실제 설치한 서버 의존성과 일반 이벤트 루프에서 전체 테스트를 실행했다. 운영 코드는 테스트 루프를 사용하지 않는다.
+소스와 .git은 C:\Users\1234v\Documents\Codex\codyssey_work_B7-1(team_work)에 보관한다. feature/c-ai-deploy 브랜치를 GitHub와 동기화했고 바탕화면 원본 저장소는 변경하지 않았다. .env·DB·tmp는 Git에서 제외된다.
 
-## 남은 검증과 팀 작업
+이 호스트에서는 PyPI DNS 오류로 서버 의존성을 설치하지 못했다. Windows asyncio 기본 루프도 내부 loopback 소켓 생성 시 정지하는 현상을 확인했다. 로컬 코어 36개는 I/O를 거절하는 REELS_TEST_MEMORY_LOOP=1 테스트 루프에서 통과했고 나머지 23개는 의존성 부재로 skip되었다. skip을 통과로 계산하지 않는다. 위 Linux CI는 서버 의존성을 실제 설치하고 일반 이벤트 루프에서 59개를 실행했다. 운영 코드는 테스트 루프를 사용하지 않는다.
 
-실제 Groq API 호출·모델의 대본 품질·지연·수정, Windows 로컬 서버 실행, PC/모바일 브라우저 화면, Linux 운영 HTTPS·영속 DB·외부 접속 URL은 미확인이다. 테스트는 AI 응답을 대역으로 주입하며 실제 유료 API를 호출하지 않았다.
+## 아직 확인하지 않은 부분
 
-PDF 업로드·OCR·모델 가중치 학습을 구현한 상태는 아니다. 이미지의 연구 질문은 대본 점검 기준으로 전달하고, 현재 인용 가능한 개념 카드는 별도로 검색한다. 팀이 카드 내용을 재검토하고 추가 원문·이용 범위를 확보해야 한다.
+실제 코디세이 키를 사용한 호출·최신 지원 모델·계정 한도·JSON 옵션·대본 품질·응답 시간은 미확인이다. 주소와 기본 모델은 기존 프로젝트의 설정을 기준으로 복원했다. 이름이 비슷한 다른 서비스의 문서로 대체하지 않았다. 모든 AI 테스트는 대역 응답이며 유료 API를 호출하지 않았다.
 
-A/B/C 각자의 실제 커밋·PR 검토·머지와 개인별 10회 기여 요건은 별도다. 초안 작업을 세 사람의 커밋으로 나누어 기록하지 않았다. develop으로의 PR은 검토 대기 상태다.
+공개 PDF 일부는 웹 도구로 본문·페이지를 확인했다. 로컬 DNS 제한으로 원본 PDF 바이트·SHA-256은 확보하지 못했으며, 검토한 한국어 카드만 저장소에 보관한다. 원문 전체 학습·파인튜닝·PDF 업로드/OCR 자동화는 하지 않았다. 자료의 적용 범위는 [실제 연결 목록](KNOWLEDGE.md)에 명시했다.
+
+Windows에서 실제 서버 실행, PC/모바일 브라우저의 시각 확인, Linux 운영 HTTPS·영속 DB·외부 접속 URL은 별도 검증 대상이다. A/B/C의 실제 개인별 10회 커밋과 PR 검토·머지도 팀이 진행해야 한다. develop으로의 PR은 초안 검토 대기 상태다.
