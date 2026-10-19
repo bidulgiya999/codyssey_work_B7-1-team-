@@ -69,7 +69,10 @@ class KnowledgeBase:
             score = (100 if direct else 0) + min(direct, 5) * 10 + min(contextual, 5)
             score += sum(1 for token in terms if len(token) > 1 and token in text)
             if score:
-                ranked.append((score, card["card_id"], card))
+                ranked.append((score, card["card_id"], card, direct))
+        # A named concept should not be padded with unrelated background cards.
+        if any(item[3] for item in ranked):
+            ranked = [item for item in ranked if item[3]]
         ranked.sort(key=lambda item: (-item[0], item[1]))
         return [item[2] for item in ranked[:limit]]
 

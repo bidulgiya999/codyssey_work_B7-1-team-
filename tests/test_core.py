@@ -237,8 +237,8 @@ class CoreTests(unittest.TestCase):
                 self.assertIn(expected, [c["card_id"] for c in self.kb.search(query)])
 
     def test_explicit_theory_outranks_old_conversation_context(self):
-        cards = self.kb.search("몽타주가 뭐야", context="시청자 타겟 공감 목적 정보 연출 대본 구조")
-        self.assertEqual(cards[0]["card_id"], "mp-montage")
+        cards = self.kb.search("몽타주를 설명해줘", context="시청자 타겟 공감 목적 정보 연출 대본 구조")
+        self.assertEqual([c["card_id"] for c in cards], ["mp-montage"])
 
     def test_explanation_passes_retrieved_evidence_and_returns_provenance(self):
         output = {"intent":"explanation", "answer":"연속 편집은 공간과 시간 흐름을 이해하도록 연결합니다.",
