@@ -11,9 +11,9 @@ jobs:
         with:
           python-version: '3.12'
           cache: pip
-          cache-dependency-path: requirements-reels-dev.txt
-      - run: python -m pip install -r requirements-reels-dev.txt
+          cache-dependency-path: requirements-dev.txt
+      - run: python -m pip install -r requirements-dev.txt
       - name: Require web and DB dependencies (no silent skips)
         run: python -c "import fastapi, sqlalchemy, httpx, bcrypt, pydantic_settings, email_validator, jinja2, itsdangerous"
       - run: python scripts/verify_reels.py
-      - run: python -m unittest discover -s tests_reels -v
+      - run: python -m unittest discover -s tests -v

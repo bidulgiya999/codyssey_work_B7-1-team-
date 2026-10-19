@@ -1,5 +1,5 @@
-# 모든 모델을 여기서 import해야 app.main의 create_all이 테이블을 만든다.
+# 사용자·기획 대화·대본 모델을 Base에 등록한다.
 from app.models.user import User
-from app.models.chat import Chat
+from app.models.reels import Conversation, ReelsScript, ReelsTurn
 
-__all__ = ["User", "Chat"]
+__all__ = ["User", "Conversation", "ReelsScript", "ReelsTurn"]

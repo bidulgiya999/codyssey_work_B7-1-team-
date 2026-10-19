@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 os.environ["SECRET_KEY"] = "test-only-reels-secret-at-least-32"
 os.environ["DATABASE_URL"] = "sqlite://"
-os.environ["LLM_API_KEY"] = ""
+os.environ["GROQ_API_KEY"] = ""
 os.environ["SESSION_HTTPS_ONLY"] = "false"
 os.environ["ENABLE_API_DOCS"] = "false"
 
@@ -21,7 +21,7 @@ if AVAILABLE:
     from sqlalchemy.orm import sessionmaker
     from app.database import Base, create_db_engine, get_db
     from app.models.reels import Conversation, ReelsTurn, ReelsScript
-    from app.reels_main import app
+    from app.main import app
     from app.services import llm
     from app.services.reels.knowledge import KnowledgeBase
     from app.services.reels.schemas import Brief, ChatRequest
@@ -132,6 +132,16 @@ class APITests(unittest.TestCase):
                 result=self.chat(conv)
                 self.assertEqual(result.status_code,502,result.text)
                 self.assertNotIn("upstream private body",result.text)
+
+    def test_groq_rate_limit_preserves_brief_and_releases_lease(self):
+        conv=self.conversation()
+        async def limited(*_):raise llm.AIRateLimitError()
+        with patch.object(llm,"ask_llm",side_effect=limited):result=self.chat(conv)
+        self.assertEqual(result.status_code,429,result.text)
+        self.assertEqual(result.json()["error"],"AI_RATE_LIMIT")
+        current=self.client.get(f'/api/conversations/{conv["conversation_id"]}').json()
+        self.assertEqual(current["version"],0)
+        self.assertFalse(current["processing"])
 
     def test_stale_version_does_not_call_ai(self):
         conv=self.conversation()

@@ -7,27 +7,22 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    # A: 세션 쿠키 서명 키 (필수, 빈 값 금지)
+    # B: 세션 서명·SQLite 연결
     SECRET_KEY: str = Field(min_length=16)
-    # A: DB 연결 주소
     DATABASE_URL: str = "sqlite:///./app.db"
 
-    # B: 네이버 API
-    NAVER_CLIENT_ID: str = ""
-    NAVER_CLIENT_SECRET: str = ""
-    NAVER_TIMEOUT_SECONDS: float = Field(default=5, gt=0)
-
-    # C: LLM API
-    LLM_API_KEY: str = ""
-    LLM_MODEL: str = ""
-    LLM_BASE_URL: str = "https://copa.codyssey.kr/v1"
-    LLM_TIMEOUT_SECONDS: float = Field(default=50, gt=0)  # 추론 모델 응답 여유, 브라우저 제한(65초)보다 짧게
+    # C: Groq 서버 전용 API
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "openai/gpt-oss-20b"
+    GROQ_BASE_URL: str = "https://api.groq.com/openai/v1"
+    GROQ_TIMEOUT_SECONDS: float = Field(default=30, gt=0)
+    GROQ_MAX_COMPLETION_TOKENS: int = Field(default=6000, ge=128, le=16000)
 
     # Reels: 교육용 NC 자료는 상업용 scope에서 검색되지 않는다.
     KNOWLEDGE_USAGE_SCOPE: str = "educational_noncommercial"
     SESSION_HTTPS_ONLY: bool = False
     ENABLE_API_DOCS: bool = False
-    CHAT_TOTAL_TIMEOUT_SECONDS: float = Field(default=55, gt=0, le=120)
+    CHAT_TOTAL_TIMEOUT_SECONDS: float = Field(default=40, gt=0, le=120)
 
 
 settings = Settings()

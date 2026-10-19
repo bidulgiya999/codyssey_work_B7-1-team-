@@ -1,4 +1,6 @@
-# 검증 현황 — 2026-10-19
+# 릴스 대본 코치 검증 현황 — 2026-10-19
+
+현재 기본 실행 파일을 app.main:app으로 통일하고 Groq 연동으로 변경했다. 과거 주제의 화면·기능·문서·테스트·도표는 제거했다. 변경 후 검증 대상은 코어 26개, API/SQLite 13개, Groq HTTP 계약 8개로 총 47개다. 최신 CI 확인 결과는 아래에 추가한다.
 
 ## 실행 결과
 
@@ -14,14 +16,14 @@ PyPI DNS 오류로 FastAPI·SQLAlchemy·httpx 등 서버 의존성을 설치하�
 ```powershell
 $env:REELS_TEST_MEMORY_LOOP = '1'
 # REELS_TEST_TMPDIR에 쓰기 가능한 테스트 임시 경로 지정 후 실행함.
-python -m unittest discover -s tests_reels -v
+python -m unittest discover -s tests -v
 ```
 
 ## 후속 검증
 
-Windows 로컬 실행은 requirements-reels-dev.txt 설치 후 별도 확인한다. 실제 AI의 JSON 형식·응답 품질·지연·수정, PC/모바일 브라우저, 운영 Linux HTTPS·영속 DB·외부 접속 URL은 미확인이다. 테스트에서는 AI 응답·실패를 대역으로 주입하며 실제 유료 API를 호출하지 않았다.
+Windows 로컬 실행은 requirements-dev.txt 설치 후 별도 확인한다. 실제 Groq 모델의 JSON 형식·응답 품질·지연·수정, PC/모바일 브라우저, 운영 Linux HTTPS·영속 DB·외부 접속 URL은 미확인이다. 테스트에서는 AI 응답·실패를 대역으로 주입하며 실제 유료 API를 호출하지 않았다.
 
-## CI 증거
+## 이전 단계의 CI 증거
 
 - [전체 38개 테스트 통과한 실행](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39225589443).
 - 검증 커밋: `265b7c3cf6b0c979a881b0f7dec410626b3cbec8`.

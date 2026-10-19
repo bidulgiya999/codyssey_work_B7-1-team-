@@ -27,7 +27,7 @@ Limit = Annotated[int, Query(ge=1, le=100)]
 
 @router.get("/me")
 def me(user=Depends(require_login)):
-    return {"id": user.id, "email": user.email, "llm_configured": bool(settings.LLM_API_KEY)}
+    return {"id": user.id, "email": user.email, "ai_provider": "groq", "ai_configured": bool(settings.GROQ_API_KEY)}
 
 
 @router.post("/conversations", status_code=201)
@@ -79,6 +79,8 @@ async def chat(body: ChatRequest, request: Request, user=Depends(require_login),
             answer = await llm.ask_llm(system, messages)
         except llm.AITimeoutError:
             raise CoachError("AI_TIMEOUT", "응답이 지연되고 있어요. 잠시 후 다시 시도해 주세요.", 504) from None
+        except llm.AIRateLimitError:
+            raise CoachError("AI_RATE_LIMIT", "AI 요청 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.", 429) from None
         except llm.AIServiceError:
             raise CoachError("AI_ERROR", "AI에 연결하지 못했습니다. 잠시 후 다시 시도해 주세요.") from None
         logger.info("ai_call_success user_id=%s request_id=%s latency_ms=%s", user_id, request_id, int((time.perf_counter()-started)*1000))
