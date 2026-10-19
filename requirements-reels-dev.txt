@@ -1,0 +1,2 @@
+-r requirements-reels.txt
+pytest>=8.3,<10

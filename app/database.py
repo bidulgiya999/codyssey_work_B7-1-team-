@@ -13,8 +13,8 @@ class Base(DeclarativeBase):
 def create_db_engine(url: str) -> Engine:
     """DB 엔진을 만든다. SQLite면 스레드 검사를 끄고 외래키 제약을 켠다."""
     is_sqlite = url.startswith("sqlite")
-    connect_args = {"check_same_thread": False} if is_sqlite else {}
-    engine = create_engine(url, connect_args=connect_args)
+    connect_args = {"check_same_thread": False, "timeout": 5} if is_sqlite else {}
+    engine = create_engine(url, connect_args=connect_args, hide_parameters=True)
 
     if is_sqlite:
 
