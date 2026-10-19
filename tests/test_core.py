@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from app.services.reels.coach import CoachError, ReelsCoach, make_messages
 from app.services.reels.knowledge import DATA_DIR, KnowledgeBase
+from app.services.reels.research import load_research_agenda
 from app.services.reels.schemas import Brief, ChatRequest, ScriptDraft
 from async_runner import run
 
@@ -112,6 +113,38 @@ class CoreTests(unittest.TestCase):
         with self.assertRaises(CoachError) as error:
             self.call(data,action="generate",brief=complete_brief(),phase="ready")
         self.assertEqual(error.exception.code,"AI_INVALID_RESPONSE")
+
+    def test_research_agenda_reaches_briefing_and_generation_as_questions(self):
+        for action in ["message", "generate"]:
+            output = {"brief_patch": {}} if action == "message" else draft()
+            _, calls = self.call(output, action=action, brief=complete_brief(), phase="ready")
+            system, messages = calls[0]
+            data = json.loads(messages[0]["content"].split("\n", 1)[1])
+            agenda = data["research_agenda"]
+            self.assertEqual(agenda["evidence_status"], "research_questions_not_findings")
+            self.assertEqual(len(agenda["topics"]), 8)
+            self.assertIn("검증된 연구 결과나 인용 출처가 아니다", system)
+            self.assertTrue(all(not c["card_id"].startswith("rq-") for c in data["reference_cards"]))
+
+    def test_research_question_cannot_be_cited_as_evidence(self):
+        data = draft()
+        data["rationale"][0]["card_ids"] = ["rq-01"]
+        with self.assertRaises(CoachError) as error:
+            self.call(data, action="generate", brief=complete_brief(), phase="ready")
+        self.assertEqual(error.exception.code, "AI_INVALID_RESPONSE")
+
+    def test_research_loader_rejects_claimed_findings_or_duplicate_topics(self):
+        for change in ["findings", "duplicate"]:
+            data = load_research_agenda()
+            if change == "findings":
+                data["evidence_status"] = "proven"
+            else:
+                data["topics"][1]["id"] = data["topics"][0]["id"]
+            with tempfile.TemporaryDirectory(dir=os.environ.get("REELS_TEST_TMPDIR")) as folder:
+                path = Path(folder) / "agenda.json"
+                path.write_text(json.dumps(data), encoding="utf-8")
+                with self.assertRaises(ValueError):
+                    load_research_agenda(path)
 
     def test_incorrect_timeline_rejected(self):
         for field,value in [("start_sec",2),("end_sec",29),("scene_no",2)]:

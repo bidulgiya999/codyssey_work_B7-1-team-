@@ -83,6 +83,8 @@ bcrypt 회원가입과 HttpOnly 서명 세션을 사용합니다. 제작 조건�
 ## 기술 문서·협업
 
 - [API 요청·응답과 A/B/C 연결 규격](docs/API.md)
+- [제공한 이미지의 8개 연구 주제와 챗봇 적용](docs/RESEARCH_AGENDA.md)
+- [Groq Console 설정](docs/GROQ.md)
 - [DB·ERD·조회 가이드](docs/DATABASE.md)
 - [Linux 배포·환경 변수](docs/DEPLOY.md)
 - [팀 역할·실제 작업 내역](docs/TEAM.md)
