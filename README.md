@@ -4,6 +4,8 @@
 
 **초기 통합 구현입니다.** 실제 AI 게이트웨이, 브라우저 화면, Linux 공개 배포는 별도 확인이 필요합니다. 공개 서비스 URL은 아직 없습니다. [검증 현황](docs/REELS_VERIFICATION.md)을 확인하세요.
 
+GitHub Actions의 Linux 환경에서 코어·API·SQLite **38개 테스트가 모두 통과**했습니다. [실행 결과](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39225589443). 실제 AI API 호출은 대역으로 분리해 검증했습니다.
+
 ## Windows / VS Code 실행
 
 새 실행 대상은 **app.reels_main:app**입니다. app.main:app은 가져온 기존 경제·트렌드 서비스입니다. Python 3.12를 사용합니다.

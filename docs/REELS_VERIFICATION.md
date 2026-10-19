@@ -4,7 +4,7 @@
 
 - 새 폴더에 소스·Git 이력 복사, C 브랜치 유지, 원본 미변경.
 - 기획·검색·문맥·응답·출처·장면 시간·타임아웃 등 **코어 테스트 26개 통과**.
-- ASGI·SQLite 통합 테스트 12개 작성. 의존성 부재로 **12개 skip**. 통과로 계산하지 않음.
+- 로컬에서는 ASGI·SQLite 통합 테스트 12개가 의존성 부재로 skip되었다. 이후 **GitHub Actions의 Linux/Python 3.12에서 코어 26개 + API·SQLite 12개, 총 38개가 skip 없이 모두 통과**했다.
 - JavaScript 구문 검사 통과. Python 구문·JSON·자료 연결 검증은 scripts/verify_reels.py로 확인한다.
 
 ## 환경 제한
@@ -19,6 +19,14 @@ python -m unittest discover -s tests_reels -v
 
 ## 후속 검증
 
-일반 환경에서 requirements-reels-dev.txt를 설치하고 API 테스트 12개를 실제 실행한다. 실제 AI의 JSON 형식·응답 품질·지연·수정, PC/모바일 브라우저, Linux HTTPS·영속 DB·외부 접속 URL은 미확인이다. 기존 문서의 과거 테스트 결과를 이번 결과로 옮겨 적지 않는다.
+Windows 로컬 실행은 requirements-reels-dev.txt 설치 후 별도 확인한다. 실제 AI의 JSON 형식·응답 품질·지연·수정, PC/모바일 브라우저, 운영 Linux HTTPS·영속 DB·외부 접속 URL은 미확인이다. 테스트에서는 AI 응답·실패를 대역으로 주입하며 실제 유료 API를 호출하지 않았다.
+
+## CI 증거
+
+- [전체 38개 테스트 통과한 실행](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39225589443).
+- 검증 커밋: `265b7c3cf6b0c979a881b0f7dec410626b3cbec8`.
+- 로그 결과: `Ran 38 tests in 13.290s` / `OK`. 패키지 import 사전 확인을 통과했으며 skip 표시 없음.
+- FastAPI 0.146.0, SQLAlchemy 2.1.5, Pydantic 2.14.1, httpx 0.28.1, bcrypt 5.0.0 환경에서 확인. CI는 일반 이벤트 루프를 사용함.
+- 가입·로그인·로그아웃, 비로그인/타인 접근 차단, 대화방 문맥 분리, 저장 실패·timeout 후 상태 보존, 동시 처리 lease, 생성·수정 버전과 출처 저장을 검증함.
 
 팀이 카드 내용을 재검토하고 김미림 교수님 자료의 원문·이용 범위를 확보해야 한다. A/B/C 각자의 실제 커밋·PR 검토·머지와 개인별 10회 기여 요건은 별도다. 이번 초안을 세 사람의 커밋으로 나누어 기록하지 않았다.
