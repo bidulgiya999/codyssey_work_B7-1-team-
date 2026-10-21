@@ -1,29 +1,26 @@
-from fastapi import Depends, Request, status
+"""Resolve signed session identities before accessing owner-scoped resources."""
+from typing import Annotated
+
+from fastapi import Depends, Request
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.errors import APIError
-from app.models import User
+from app.models.user import User
 
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> User | None:
-    """세션의 로그인 사용자를 돌려준다. 로그인하지 않았으면 None.
-
-    화면 라우트는 이 함수를 받아 None이면 /login으로 리다이렉트한다.
-    """
-    user_id = request.session.get("user_id")
-    if user_id is None:
-        return None
-
-    user = db.get(User, user_id)
-    if user is None:
-        # 삭제된 사용자의 세션은 비운다.
+def get_current_user(request: Request, db: Annotated[Session, Depends(get_db)]) -> User | None:
+    identity = request.session.get("user_id")
+    if type(identity) is not int or identity < 1:
         request.session.clear()
-    return user
+        return None
+    account = db.get(User, identity)
+    if account is None:
+        request.session.clear()
+    return account
 
 
-def require_login(user: User | None = Depends(get_current_user)) -> User:
-    """로그인한 사용자만 통과시킨다. API 라우트에서 Depends(require_login)으로 쓴다."""
-    if user is None:
-        raise APIError(status.HTTP_401_UNAUTHORIZED, "LOGIN_REQUIRED", "로그인이 필요해요.")
-    return user
+def require_login(account: Annotated[User | None, Depends(get_current_user)]) -> User:
+    if account is None:
+        raise APIError(401, "LOGIN_REQUIRED", "로그인 후 이용해 주세요.")
+    return account

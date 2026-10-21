@@ -1,50 +1,37 @@
-from collections.abc import Iterator
+"""SQLite runtime and request-scoped units of work for the shortform service."""
+from collections.abc import Generator
 
-from sqlalchemy import Engine, create_engine, event, inspect, text
+from sqlalchemy import Engine, create_engine, event
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.config import settings
 
 
 class Base(DeclarativeBase):
-    """모든 모델의 부모 클래스."""
+    pass
 
 
 def create_db_engine(url: str) -> Engine:
-    """DB 엔진을 만든다. SQLite면 스레드 검사를 끄고 외래키 제약을 켠다."""
-    is_sqlite = url.startswith("sqlite")
-    connect_args = {"check_same_thread": False} if is_sqlite else {}
-    engine = create_engine(url, connect_args=connect_args)
-
-    if is_sqlite:
-
-        @event.listens_for(engine, "connect")
-        def _enable_foreign_keys(dbapi_connection, _connection_record):
-            cursor = dbapi_connection.cursor()
-            cursor.execute("PRAGMA foreign_keys=ON")
-            cursor.close()
-
-    return engine
+    parsed = make_url(url)
+    options = {"check_same_thread": False, "timeout": 5} if parsed.get_backend_name() == "sqlite" else {}
+    connection_pool = create_engine(parsed, connect_args=options, pool_pre_ping=True, hide_parameters=True)
+    if parsed.get_backend_name() == "sqlite":
+        @event.listens_for(connection_pool, "connect")
+        def configure_sqlite(connection, _record):
+            with_cursor = connection.cursor()
+            try:
+                with_cursor.execute("PRAGMA foreign_keys = ON")
+                with_cursor.execute("PRAGMA busy_timeout = 5000")
+            finally:
+                with_cursor.close()
+    return connection_pool
 
 
 engine = create_db_engine(settings.DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine, autoflush=False)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
-def upgrade_chat_schema(db_engine: Engine) -> None:
-    """이전 대화의 mode 값을 보존하며 시나리오 버전만 추가한다. 반복 실행 가능."""
-    inspector = inspect(db_engine)
-    if "chats" not in inspector.get_table_names():
-        return
-    if "scenario_version" not in {c["name"] for c in inspector.get_columns("chats")}:
-        with db_engine.begin() as connection:
-            connection.execute(text("ALTER TABLE chats ADD COLUMN scenario_version INTEGER NOT NULL DEFAULT 1"))
-
-
-def get_db() -> Iterator[Session]:
-    """요청마다 DB 세션을 열고, 요청이 끝나면 닫는다. commit은 각 라우터에서 한다."""
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
+def get_db() -> Generator[Session, None, None]:
+    with SessionLocal() as unit_of_work:
+        yield unit_of_work
