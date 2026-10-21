@@ -19,11 +19,11 @@
 Python 3.12와 uv를 사용합니다. 로컬 파일과 .git은 다음 폴더에 있습니다.
 
 ```powershell
-Set-Location 'C:\Users\1234v\Documents\Codex\codyssey_work_B7-1(team_work)'
+Set-Location 'C:\Users\1234v\Desktop\codyssey_work_B7-1(team_renew)'
 uv python install 3.12
 uv venv --python 3.12
 uv pip install --python .venv\Scripts\python.exe -r requirements-dev.txt
-Copy-Item .env.example .env
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
 ```
 
@@ -94,6 +94,8 @@ flowchart LR
 - [API 요청·응답과 A/B/C 연결 규격](docs/API.md)
 - [제공한 이미지의 8개 연구 주제와 챗봇 적용](docs/RESEARCH_AGENDA.md)
 - [공개 원문 12종·카드 21개·검색 확인 방법](docs/KNOWLEDGE.md)
+- [사용 데이터와 실제 답변 생성 흐름](docs/DATA_FLOW.md)
+- [과제 요구사항별 구현·검증·남은 작업](docs/REQUIREMENTS.md)
 - [코디세이 API 설정](docs/AI_SETUP.md)
 - [DB·ERD·조회 가이드](docs/DATABASE.md)
 - [Linux 배포·환경 변수](docs/DEPLOY.md)

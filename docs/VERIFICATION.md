@@ -11,6 +11,8 @@
 - 비로그인/타인 접근 차단, 중복 가입·이메일 정규화, 잘못된 유니코드, 삭제 계정의 쿠키 재사용 차단을 확인했다.
 - AI 호출·입력/스키마·출처·시간·대본 버전·처리 잠금·DB 실패 후 복구는 대역을 사용하는 통합 시험이며 실제 유료 호출로 계산하지 않는다.
 
+바탕화면의 team_renew 폴더에서 새 Python 3.12.15 가상환경에 requirements-dev.txt를 설치하고 다시 실행했다. Python 76개가 214.954초에 모두 통과했고 skip은 없다. Node 9개와 verify_shortform.py 검사도 통과했다. 이 재실행 로그는 새 폴더의 tmp/renew-tests.log에 있으며 실제 유료 AI를 다시 호출한 시험은 아니다. 공개 카드 검색에서 '프라이타크와 3막'의 plot-freytag / mp-three-act와 출처가 선택되는 것도 확인했다.
+
 ## 원본과 구분하는 검사
 
 [코드 비교 기록](SOURCE_AUDIT.md)에 기준 커밋·현재 구현 범위·한계를 기록한다. 가져왔던 develop 커밋과 비교 대상 저장소의 현재 main을 각각 대조해 비어 있지 않은 동일 소스 파일과 전체 Python AST 일치가 0건임을 확인했다. 이 결과를 모든 공통 코드 조각이 없다는 보장이나 저작권 판정으로 사용하지 않는다.
@@ -27,10 +29,16 @@
 
 ## 이전 CI와 남은 검증
 
+재구현 커밋 a16d46e5fa5dc6193cac319995a4de38ee6d7d05의 [PR #2 Linux/Python 3.12 CI](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39559519043)는 성공했다. CI는 외부 유료 AI 대신 대역으로 기능을 검증한다.
+
 이전 b7469f90a39d13cb010a8a4825de981da66d04d0의 [Linux/Python 3.12 CI](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/actions/runs/39231795091)는 당시 59개 테스트를 통과했다. 이전 코드의 증거이며 이번 재구현 코드의 CI 결과로 대신하지 않는다.
 
 PC/모바일 실제 브라우저 시각 확인, 다양한 조건의 대본 품질 비교, PDF 원본 확보·팀 검토, Linux 운영 HTTPS·영속 DB·외부 접속 URL, 팀원별 실제 커밋과 리뷰/PR 병합은 별도 확인 대상이다. PDF 페이지를 웹에서 확인한 것과 파일 전체 학습·OCR·파인튜닝을 구분한다.
 
 ## 보관·공유
 
-로컬 폴더는 C:\Users\1234v\Documents\Codex\codyssey_work_B7-1(team_work)이며 작업 브랜치는 feature/c-ai-deploy다. 외부 공유는 [현재 구현 브랜치](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/tree/feature/c-ai-deploy)를 사용한다. 기본 브랜치 main의 초기 README를 새 서비스로 교체하려면 검토된 PR을 통합해야 한다. 기존 PR #1은 2026-10-21 확인 시 닫혀 있고 병합되지 않았다.
+현재 작업 폴더는 C:\Users\1234v\Desktop\codyssey_work_B7-1(team_renew)이며 작업 브랜치는 feature/c-ai-deploy다. 자신의 원격 저장소에서 이 브랜치를 clone하고 Python 3.12 가상환경을 새로 설치했다. 기존 .env는 로컬에만 복사했고 SQLite backup API로 기존 사용자 DB의 일관된 사본을 만들었다. .env·DB·.venv·tmp는 Git에서 제외된다.
+
+기존 Documents\Codex\codyssey_work_B7-1(team_work) 폴더는 삭제하지 않았다. 위의 2026-10-20/21 실제 AI 실행 증거와 이전 테스트 로그는 기존 폴더의 tmp에 보관되어 있으며, 새 폴더에 그 증거까지 복사했다고 주장하지 않는다.
+
+외부 공유는 [현재 구현 브랜치](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/tree/feature/c-ai-deploy)와 [검토용 PR #2](https://github.com/bidulgiya999/codyssey_work_B7-1-team-/pull/2)를 사용한다. 기본 브랜치 main의 초기 README를 새 서비스로 교체하려면 검토된 PR을 통합해야 한다. 기존 PR #1은 2026-10-21 확인 시 닫혀 있고 병합되지 않았다.
