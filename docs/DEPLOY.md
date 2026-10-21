@@ -12,7 +12,7 @@ cp .env.example .env
 chmod 600 .env
 ```
 
-2. `/srv/reels-coach-data` 등 영속 DB 디렉터리를 서비스 사용자가 쓸 수 있게 준비한다. `.env`의 SECRET_KEY, LLM_API_KEY, LLM_MODEL, LLM_BASE_URL을 설정한다. `DATABASE_URL=sqlite:////srv/reels-coach-data/app.db`, `SESSION_HTTPS_ONLY=true`, `ENABLE_API_DOCS=false`를 사용한다. 기존 .env가 있다면 덮어쓰지 않는다.
+2. `/srv/reels-coach-data` 등 영속 DB 디렉터리를 서비스 사용자가 쓸 수 있게 준비한다. `.env`의 SECRET_KEY, LLM_API_KEY, LLM_API_STYLE, LLM_MODEL, LLM_BASE_URL을 설정한다. 현재 팀 키는 `LLM_API_STYLE=anthropic`, `LLM_MODEL=claude-sonnet-4`를 사용한다. `DATABASE_URL=sqlite:////srv/reels-coach-data/app.db`, `SESSION_HTTPS_ONLY=true`, `ENABLE_API_DOCS=false`를 사용한다. 기존 .env가 있다면 덮어쓰지 않는다.
 3. 경로·사용자를 검토하고 service를 등록한다.
 
 ```bash

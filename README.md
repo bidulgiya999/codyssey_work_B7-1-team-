@@ -23,7 +23,7 @@ Copy-Item .env.example .env
 .\.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-.env가 이미 있으면 덮어쓰지 마세요. 생성한 무작위 값을 SECRET_KEY에 입력하고, 교육과정에서 발급받은 코디세이 API 키를 **LLM_API_KEY**에 넣습니다. 기본 주소 https://copa.codyssey.kr/v1과 모델 gpt-5-mini는 기존 프로젝트의 설정을 따른 값이며, 현재 팀 계정의 안내와 사용 가능한 모델을 확인해야 합니다. 키는 Git·문서·채팅에 올리지 않습니다. [코디세이 설정과 확인 범위](docs/AI_SETUP.md)를 참고하세요.
+.env가 이미 있으면 덮어쓰지 마세요. 생성한 무작위 값을 SECRET_KEY에 입력하고, 교육과정에서 발급받은 코디세이 API 키를 **LLM_API_KEY**에 넣습니다. 현재 팀의 키는 Anthropic 호환이므로 LLM_API_STYLE=anthropic을 사용합니다. 코디세이 요청 ID는 claude-sonnet-4이며, 2026-10-20 최소 호출에서 실제 응답 모델은 claude-sonnet-4-6으로 확인했습니다. 키는 Git·문서·채팅에 올리지 않습니다. [코디세이 설정과 확인 범위](docs/AI_SETUP.md)를 참고하세요.
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
@@ -55,16 +55,17 @@ bcrypt 회원가입과 HttpOnly 서명 세션을 사용합니다. 제작 조건�
 | DATABASE_URL | 기본 sqlite:///./app.db, 운영은 영속 경로 |
 | LLM_API_KEY | 교육과정에서 발급받은 키. 서버에서만 사용 |
 | LLM_BASE_URL | https://copa.codyssey.kr/v1 |
-| LLM_MODEL | 기본 gpt-5-mini. 계정에서 사용 가능한 모델 |
-| LLM_TIMEOUT_SECONDS | HTTP timeout, 기본 50초 |
-| LLM_MAX_COMPLETION_TOKENS | 출력 예산, 기본 8000 |
-| LLM_JSON_MODE | 기본 false. 코디세이에서 지원 확인 후 true로 설정 |
-| CHAT_TOTAL_TIMEOUT_SECONDS | AI 처리 총 대기 제한, 기본 60초 |
+| LLM_API_STYLE | 기본 anthropic. 키의 호환 방식에 맞춰 anthropic 또는 openai |
+| LLM_MODEL | 기본 claude-sonnet-4. 코디세이의 모델 별칭 사용 |
+| LLM_TIMEOUT_SECONDS | HTTP timeout, 기본 90초 |
+| LLM_MAX_COMPLETION_TOKENS | 출력 예산, 기본 8000. Anthropic 요청에는 max_tokens로 전달 |
+| LLM_JSON_MODE | 기본 false. openai 방식에서만 response_format 전달 |
+| CHAT_TOTAL_TIMEOUT_SECONDS | AI 처리 총 대기 제한, 기본 105초 |
 | KNOWLEDGE_USAGE_SCOPE | 교육용 비상업 기본. commercial이면 NC 카드 제외 |
 | SESSION_HTTPS_ONLY | 로컬 HTTP false, 운영 HTTPS true |
 | ENABLE_API_DOCS | 기본 false. 로컬 true이면 /docs |
 
-.env·DB·가상환경은 Git에서 제외합니다. 예시에는 실제 키가 없습니다. 프롬프트로 JSON 출력을 지시하고 서버에서 형식·장면·출처를 검증합니다. 코디세이 프록시의 response_format 지원은 확인 전이므로 기본 요청에 넣지 않습니다. 429 한도 초과·timeout·공급자 오류·잘못된 응답을 사용자에게 안내하며 무제한 재시도하지 않습니다.
+.env·DB·가상환경은 Git에서 제외합니다. 예시에는 실제 키가 없습니다. Anthropic 방식은 /messages, x-api-key, 별도 system 필드로 요청합니다. 프롬프트로 JSON 출력을 지시하고 서버에서 형식·장면·출처를 검증합니다. 429 한도 초과·timeout·공급자 오류·잘못된 응답을 사용자에게 안내하며 무제한 재시도하지 않습니다.
 
 ## 이론 자료
 
@@ -79,7 +80,7 @@ bcrypt 회원가입과 HttpOnly 서명 세션을 사용합니다. 제작 조건�
 .\.venv\Scripts\python.exe scripts/check_reels_logs.py --db app.db --user-id 1
 ```
 
-실제 본인 user_id를 사용하세요. 테스트는 실제 외부 AI 호출을 대역으로 분리합니다. API·SQLite 통합 테스트는 서버 의존성이 필요하며 skip을 통과로 계산하지 않습니다. 최신 실행 증거는 [검증 문서](docs/VERIFICATION.md)에 기록합니다. 실제 코디세이 응답 품질·브라우저 화면·외부 공개 배포는 아직 확인이 필요합니다.
+실제 본인 user_id를 사용하세요. 자동 테스트는 실제 외부 AI 호출을 대역으로 분리합니다. API·SQLite 통합 테스트는 서버 의존성이 필요하며 skip을 통과로 계산하지 않습니다. 2026-10-20에는 별도 SQLite와 실제 코디세이 API로 회원가입·로그인·기획 대화·30초 대본 생성·저장·조회를 확인했습니다. 최신 실행 증거와 범위는 [검증 문서](docs/VERIFICATION.md)에 기록합니다. 다양한 입력의 대본 품질·브라우저 시각 확인·외부 공개 배포는 별도 검증 대상입니다.
 
 ## 기술 문서·협업
 

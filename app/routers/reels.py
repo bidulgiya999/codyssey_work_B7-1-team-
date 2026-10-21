@@ -79,6 +79,12 @@ async def chat(body: ChatRequest, request: Request, user=Depends(require_login),
             answer = await llm.ask_llm(system, messages)
         except llm.AITimeoutError:
             raise CoachError("AI_TIMEOUT", "응답이 지연되고 있어요. 잠시 후 다시 시도해 주세요.", 504) from None
+        except llm.AIAuthenticationError:
+            logger.warning("ai_provider_rejected user_id=%s request_id=%s upstream_status=401", user_id, request_id)
+            raise CoachError("AI_AUTH_ERROR", "코디세이 API 인증에 실패했습니다. 서버의 API 키 설정을 확인해 주세요.") from None
+        except llm.AIAccessDeniedError:
+            logger.warning("ai_provider_rejected user_id=%s request_id=%s upstream_status=403", user_id, request_id)
+            raise CoachError("AI_ACCESS_DENIED", "코디세이에서 채팅 요청을 거부했습니다. 계정·API 키의 사용 권한과 선택한 모델을 확인해 주세요.") from None
         except llm.AIRateLimitError:
             raise CoachError("AI_RATE_LIMIT", "AI 요청 한도에 도달했습니다. 잠시 후 다시 시도해 주세요.", 429) from None
         except llm.AIServiceError:

@@ -160,6 +160,23 @@ class APITests(unittest.TestCase):
         self.assertEqual(current["version"],0)
         self.assertFalse(current["processing"])
 
+    def test_authentication_or_permission_error_is_actionable_and_keeps_state(self):
+        for failure, code in [(llm.AIAuthenticationError, "AI_AUTH_ERROR"),
+                              (llm.AIAccessDeniedError, "AI_ACCESS_DENIED")]:
+            conv = self.conversation()
+            async def rejected(*_):
+                raise failure("private provider response")
+            with self.subTest(code=code), patch.object(llm, "ask_llm", side_effect=rejected):
+                response = self.chat(conv)
+            self.assertEqual(response.status_code, 502)
+            self.assertEqual(response.json()["error"], code)
+            self.assertNotIn("private", response.text)
+            current = self.client.get(f'/api/conversations/{conv["conversation_id"]}').json()
+            self.assertEqual(current["version"], 0)
+            self.assertFalse(current["processing"])
+            rows = self.client.get(f'/api/me/chats?conversation_id={conv["conversation_id"]}').json()["items"]
+            self.assertEqual(rows[0]["error_code"], code)
+
     def test_stale_version_does_not_call_ai(self):
         conv=self.conversation()
         async def ask(*_): return '{"brief_patch":{}}'

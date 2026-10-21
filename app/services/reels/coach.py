@@ -113,7 +113,9 @@ class ReelsCoach:
                 "latest_script": latest_script}
         output_model = Extraction if action == "message" else ScriptDraft
         if action == "message":
-            instruction = ("현재 발언에서 명시된 변경 사항만 brief_patch에 넣는다. 빠진 값이나 추측을 덮어쓰지 않는다. "
+            instruction = ("이 단계는 기획 정보 정리 또는 이론 설명만 수행하며 대본·장면 초안을 작성하지 않는다. "
+                           "일반 기획 대화는 intent=brief, answer=null, card_ids=[]로 반환한다. "
+                           "현재 발언에서 명시된 변경 사항만 brief_patch에 넣는다. 빠진 값이나 추측을 덮어쓰지 않는다. "
                            "새 주제·다른 촬영 방식으로 바뀌어 기존 조건과 충돌하면 필요한 필드를 null/빈 목록으로 돌리고 다시 묻는다. "
                            "confirmed/schema_version은 쓰지 않는다. 제안은 proposed_defaults에만 적는다. "
                            "brief_patch의 필드 형식은 다음 Brief 스키마와 같다:\n" +
@@ -122,11 +124,14 @@ class ReelsCoach:
                            "follow_up_questions는 비어 있는 항목만 최대 두 개. 조건이 충분하면 빈 목록.")
         else:
             instruction = ("확인된 제작 조건에 맞는 장면별 대본을 작성한다. "
+                           "목표 길이에 필요한 장면만 구성하고, 장면별 visual과 direction은 각각 한두 문장으로 구체적이고 간결하게 쓴다. 같은 설명을 반복하지 않는다. "
                            "모든 장면 시간은 정수 초이며 0초부터 목표 길이까지 빈틈·겹침 없이 이어진다. "
                            "rationale에는 제공된 카드 ID와 실제 장면 번호만 넣어 선택 이유와 적용 한계를 설명한다. "
                            "출처 제목·페이지·DB ID는 출력하지 않는다. 구조 이름은 제작 제안이며 학술 이론인 것처럼 쓰지 않는다. "
                            "변경 요청은 기존 대본에 반영하고 change_summary를 기록한다. 기획의 길이·타겟 등은 임의 변경하지 않는다.")
-        system = SYSTEM + instruction + "\n출력 JSON 스키마:\n" + json.dumps(output_model.model_json_schema(), ensure_ascii=False)
+        system = (SYSTEM + instruction + "\n인용 가능한 카드 ID(이 목록 밖의 ID를 만들지 않는다):\n" +
+                  json.dumps([card["card_id"] for card in cards], ensure_ascii=False) +
+                  "\n출력 JSON 스키마:\n" + json.dumps(output_model.model_json_schema(), ensure_ascii=False))
         try:
             async with asyncio.timeout(self.timeout):
                 raw = await self.ask(system, make_messages(data, history, message))

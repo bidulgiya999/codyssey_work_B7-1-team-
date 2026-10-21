@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -13,9 +15,11 @@ class Settings(BaseSettings):
 
     # C: Codyssey 서버 전용 API
     LLM_API_KEY: str = ""
-    LLM_MODEL: str = "gpt-5-mini"
+    LLM_API_STYLE: Literal["anthropic", "openai"] = "anthropic"
+    # Codyssey alias; the live response on 2026-10-20 identified Sonnet 4.6.
+    LLM_MODEL: str = "claude-sonnet-4"
     LLM_BASE_URL: str = "https://copa.codyssey.kr/v1"
-    LLM_TIMEOUT_SECONDS: float = Field(default=50, gt=0)
+    LLM_TIMEOUT_SECONDS: float = Field(default=90, gt=0)
     LLM_MAX_COMPLETION_TOKENS: int = Field(default=8000, ge=128, le=16000)
 
     LLM_JSON_MODE: bool = False
@@ -24,7 +28,7 @@ class Settings(BaseSettings):
     KNOWLEDGE_USAGE_SCOPE: str = "educational_noncommercial"
     SESSION_HTTPS_ONLY: bool = False
     ENABLE_API_DOCS: bool = False
-    CHAT_TOTAL_TIMEOUT_SECONDS: float = Field(default=60, gt=0, le=120)
+    CHAT_TOTAL_TIMEOUT_SECONDS: float = Field(default=105, gt=0, le=120)
 
 
 settings = Settings()
