@@ -21,7 +21,7 @@ class Conversation(Base):
     updated_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
 
 
-class ReelsTurn(Base):
+class ConversationTurn(Base):
     __tablename__ = "reels_turns"
     id: Mapped[int] = mapped_column(primary_key=True)
     conversation_id: Mapped[int] = mapped_column(ForeignKey("reels_conversations.id"), index=True)
@@ -36,7 +36,7 @@ class ReelsTurn(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
-class ReelsScript(Base):
+class ScriptVersion(Base):
     __tablename__ = "reels_scripts"
     __table_args__ = (UniqueConstraint("conversation_id", "revision"),)
     id: Mapped[int] = mapped_column(primary_key=True)

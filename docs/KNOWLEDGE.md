@@ -19,14 +19,14 @@
 | [Attention](https://nobaproject.com/modules/attention) — Frances Friedrich | 선택적·분산된 주의 설명 | 웹 본문, 직접 PDF 미확인 | 경쟁 정보 점검. 고정된 8초 주의 공식으로 쓰지 않음. CC BY-NC-SA 4.0 |
 | [Creativity](https://nobaproject.com/modules/creativity) — Dean Keith Simonton | Creativity: What Is It? | 웹 본문, 직접 PDF 미확인 | 독창성·유용성·놀라움과 평가 주체. CC BY-NC-SA 4.0 |
 
-CC 조건의 출처·저자·라이선스 링크·변경 표시를 유지한다. NC 자료는 교육용 비상업 범위에서 사용하며 commercial 설정은 제외한다. SA 카드의 수정·공유도 같은 조건을 유지한다. 원문의 별도 권리 그림·사진·영상·문학 예문은 수집하지 않았다. 저자나 기관의 참여·보증을 의미하지 않는다. 전체 출처 메타데이터는 [sources.json](../app/data/reels/sources.json), 카드별 절·검토자·한계는 [cards.jsonl](../app/data/reels/cards.jsonl)에 있다.
+CC 조건의 출처·저자·라이선스 링크·변경 표시를 유지한다. NC 자료는 교육용 비상업 범위에서 사용하며 commercial 설정은 제외한다. SA 카드의 수정·공유도 같은 조건을 유지한다. 원문의 별도 권리 그림·사진·영상·문학 예문은 수집하지 않았다. 저자나 기관의 참여·보증을 의미하지 않는다. 전체 출처 메타데이터는 [sources.json](../app/data/shortform/sources.json), 카드별 절·검토자·한계는 [cards.jsonl](../app/data/shortform/cards.jsonl)에 있다.
 
 ## 사진의 8개 질문과 연결
 
 | 연구 ID | 실제 검색 카드 | 여전히 구분할 한계 |
 |---|---|---|
 | rq-01 | mp-three-act, plot-freytag | 장편·작법서 논의를 15~60초에 적용하는 것은 제작 제안 |
-| rq-02 | curiosity-gap, suspense-anticipation, cognitive-load, attention-selection | 학습·복권·글 읽기 연구가 릴스 완주율의 직접 증거는 아님 |
+| rq-02 | curiosity-gap, suspense-anticipation, cognitive-load, attention-selection | 학습·복권·글 읽기 연구가 숏폼 완주율의 직접 증거는 아님 |
 | rq-03 | mp-montage, mp-continuity, mp-rhythm, mp-sound | 실제 영상의 촬영·편집·감정을 실측하지 않음 |
 | rq-04 | show-action, multimedia-redundancy | 소설·교육 자료의 응용. 필요한 자막·설명 유지 |
 | rq-05 | prompt-decomposition, prompt-evaluation | 우리 서비스의 일반 프롬프트 대비 효과는 별도 비교 필요 |

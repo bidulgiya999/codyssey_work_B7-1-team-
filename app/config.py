@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     LLM_JSON_MODE: bool = False
 
-    # Reels: 교육용 NC 자료는 상업용 scope에서 검색되지 않는다.
+    # Shortform: 교육용 NC 자료는 상업용 scope에서 검색되지 않는다.
     KNOWLEDGE_USAGE_SCOPE: str = "educational_noncommercial"
     SESSION_HTTPS_ONLY: bool = False
     ENABLE_API_DOCS: bool = False

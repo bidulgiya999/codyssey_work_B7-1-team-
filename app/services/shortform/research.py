@@ -3,7 +3,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from app.services.reels.knowledge import DATA_DIR
+from app.services.shortform.knowledge import DATA_DIR
 
 
 def load_research_agenda(path: Path = DATA_DIR / "research_agenda.json") -> dict:

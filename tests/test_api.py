@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-os.environ["SECRET_KEY"] = "test-only-reels-secret-at-least-32"
+os.environ["SECRET_KEY"] = "test-only-shortform-secret-at-least-32"
 os.environ["DATABASE_URL"] = "sqlite://"
 os.environ["LLM_API_KEY"] = ""
 os.environ["SESSION_HTTPS_ONLY"] = "false"
@@ -20,12 +20,12 @@ if AVAILABLE:
     from sqlalchemy import select, update
     from sqlalchemy.orm import sessionmaker
     from app.database import Base, create_db_engine, get_db
-    from app.models.reels import Conversation, ReelsTurn, ReelsScript
+    from app.models.shortform import Conversation, ConversationTurn, ScriptVersion
     from app.main import app
     from app.services import llm
-    from app.services.reels.knowledge import KnowledgeBase
-    from app.services.reels.schemas import Brief, ChatRequest
-    from app.services.reels import store
+    from app.services.shortform.knowledge import KnowledgeBase
+    from app.services.shortform.schemas import Brief, ChatRequest
+    from app.services.shortform import store
     from app.errors import APIError
     from test_core import complete_brief, draft
 
@@ -33,7 +33,7 @@ if AVAILABLE:
 @unittest.skipUnless(AVAILABLE, "Web/DB dependencies are not installed")
 class APITests(unittest.TestCase):
     def setUp(self):
-        self.folder=tempfile.TemporaryDirectory(dir=os.environ.get("REELS_TEST_TMPDIR"))
+        self.folder=tempfile.TemporaryDirectory(dir=os.environ.get("SHORTFORM_TEST_TMPDIR"))
         self.engine=create_db_engine(f"sqlite:///{Path(self.folder.name)/'test.db'}")
         Base.metadata.create_all(self.engine)
         self.sessions=sessionmaker(self.engine,autoflush=False)
@@ -53,7 +53,7 @@ class APITests(unittest.TestCase):
         self.engine.dispose();self.folder.cleanup()
 
     def signin(self,client,email):
-        body={"email":email,"password":"Reels-test-1234"}
+        body={"email":email,"password":"Shortform-test-1234"}
         self.assertEqual(client.post("/api/auth/signup",json=body).status_code,201)
         self.assertEqual(client.post("/api/auth/login",json=body).status_code,200)
 
@@ -194,7 +194,7 @@ class APITests(unittest.TestCase):
         self.assertEqual(second["script"]["revision"],2)
         self.assertEqual(second["script"]["parent_script_id"],first["script"]["script_id"])
         self.assertTrue(second["references"])
-        with self.sessions() as db:self.assertEqual(len(db.scalars(select(ReelsScript)).all()),2)
+        with self.sessions() as db:self.assertEqual(len(db.scalars(select(ScriptVersion)).all()),2)
 
     def test_conversations_do_not_share_context(self):
         a=self.conversation();b=self.conversation();seen=[]
@@ -231,6 +231,52 @@ class APITests(unittest.TestCase):
         self.assertIn("STORY / REELS",self.client.get("/").text)
         self.assertIn("frame-ancestors 'none'",self.client.get("/").headers["Content-Security-Policy"])
         self.assertEqual(self.client.get("/docs").status_code,404)
+
+    def test_account_normalization_duplicate_and_extra_fields(self):
+        body = {"email": " ＮｅｗＵｓｅｒ＠ｅｘａｍｐｌｅ．ｃｏｍ ", "password": "Shortform-test-1234"}
+        created = self.client.post("/api/auth/signup", json=body)
+        self.assertEqual(created.status_code, 201)
+        self.assertEqual(created.json()["email"], "newuser@example.com")
+        body["email"] = "NEWUSER@example.com"
+        self.assertEqual(self.client.post("/api/auth/signup", json=body).status_code, 409)
+        body["user_id"] = 999
+        self.assertEqual(self.client.post("/api/auth/signup", json=body).status_code, 422)
+
+    def test_existing_bcrypt_login_upgrades_hash_without_changing_identity(self):
+        import bcrypt
+        from app.models.user import User
+        password = "Legacy-password-1234"
+        with self.sessions() as db:
+            old = User(email="legacy@example.com", password_hash=bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode())
+            db.add(old)
+            db.commit()
+            identity = old.id
+        response = self.client.post("/api/auth/login", json={"email": "legacy@example.com", "password": password})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["id"], identity)
+        with self.sessions() as db:
+            stored = db.get(User, identity).password_hash
+            self.assertTrue(stored.startswith("scrypt$"))
+        self.assertEqual(self.client.get("/api/me").json()["id"], identity)
+
+    def test_account_invalid_unicode_is_a_safe_validation_error(self):
+        payload = b'{"email":"\\ud800@example.com","password":"Shortform-test-1234"}'
+        response = self.client.post("/api/auth/signup", content=payload, headers={"content-type": "application/json"})
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(response.json()["error"], "INVALID_INPUT")
+
+    def test_deleted_account_cookie_cannot_become_a_new_account(self):
+        from app.models.user import User
+        from app.security import hash_password
+        identity = self.client.get("/api/me").json()["id"]
+        with self.sessions() as db:
+            db.delete(db.get(User, identity))
+            db.commit()
+            fresh = User(email="fresh@example.com", password_hash=hash_password("Fresh-password-1234"))
+            db.add(fresh)
+            db.commit()
+            self.assertNotEqual(identity, fresh.id)
+        self.assertEqual(self.client.get("/api/me").status_code, 401)
 
 
 if __name__ == "__main__":unittest.main()

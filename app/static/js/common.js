@@ -1,38 +1,51 @@
-export async function apiRequest(path, {method = 'GET', body, timeoutMs = 65000} = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+export class RequestFailure extends Error {
+  constructor(message, status = 0, code = '') {
+    super(message);
+    this.name = 'RequestFailure';
+    this.status = status;
+    this.code = code;
+  }
+}
+
+export async function apiRequest(path, options = {}) {
+  const {method = 'GET', body, timeoutMs = 65000} = options;
+  const cancellation = new AbortController();
+  const deadline = setTimeout(() => cancellation.abort(), timeoutMs);
   try {
-    const response = await fetch(path, {
-      method, credentials: 'same-origin', signal: controller.signal,
-      headers: body === undefined ? {'Accept': 'application/json'} : {'Accept': 'application/json', 'Content-Type': 'application/json'},
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      let message = data.message || (typeof data.detail === 'string' ? data.detail : null);
-      if (!message && Array.isArray(data.detail)) message = '입력값을 확인해 주세요.';
-      if (!message) message = response.status === 401 ? '로그인이 만료되었습니다. 다시 로그인해 주세요.' : '요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
-      const error = new Error(message);
-      error.status = response.status;
-      error.code = data.error;
-      throw error;
+    const headers = new Headers({Accept: 'application/json'});
+    if (body !== undefined) headers.set('Content-Type', 'application/json');
+    const reply = await fetch(path, {method, headers, credentials: 'same-origin',
+      signal: cancellation.signal, body: body === undefined ? undefined : JSON.stringify(body)});
+    if (reply.status === 204) return null;
+    const result = await reply.json().catch(() => null);
+    if (!reply.ok) {
+      throw new RequestFailure(result?.message || '요청을 완료하지 못했습니다.', reply.status, result?.error || '');
     }
-    return data;
-  } catch (error) {
-    if (error.name === 'AbortError') throw new Error('응답 대기 시간이 초과되었습니다. 내 기록에서 저장 여부를 확인한 뒤 다시 시도해 주세요.');
-    if (error instanceof TypeError) throw new Error('서버에 연결할 수 없습니다. 네트워크 연결을 확인해 주세요.');
-    throw error;
-  } finally { clearTimeout(timer); }
+    if (result === null) throw new RequestFailure('서버 응답 형식을 확인하지 못했습니다.', reply.status);
+    return result;
+  } catch (failure) {
+    if (failure.name === 'AbortError') throw new RequestFailure('응답이 지연되고 있습니다. 대화 기록에서 저장 여부를 확인해 주세요.');
+    if (failure instanceof TypeError) throw new RequestFailure('서버에 연결하지 못했습니다. 연결 상태를 확인해 주세요.');
+    throw failure;
+  } finally {
+    clearTimeout(deadline);
+  }
 }
 
-export function showError(element, message) {
-  element.textContent = message;
-  element.hidden = !message;
+export function showError(target, message) {
+  if (!target) return;
+  target.replaceChildren(document.createTextNode(message || ''));
+  target.hidden = !message;
 }
 
-document.querySelector('#logout-button')?.addEventListener('click', async (event) => {
-  const button = event.currentTarget;
-  button.disabled = true;
-  try { await apiRequest('/api/auth/logout', {method: 'POST'}); location.assign('/login'); }
-  catch (error) { showError(document.querySelector('#global-error'), error.message); button.disabled = false; }
+const logout = document.getElementById('logout-button');
+logout?.addEventListener('click', async () => {
+  logout.disabled = true;
+  try {
+    await apiRequest('/api/auth/logout', {method: 'POST'});
+    window.location.replace('/login');
+  } catch (failure) {
+    showError(document.getElementById('global-error'), failure.message);
+    logout.disabled = false;
+  }
 });

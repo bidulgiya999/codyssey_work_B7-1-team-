@@ -1,10 +1,10 @@
-# 릴스 대본 코치 API v1
+# 인스타 릴스 대본 코치 API v1
 
-실행 대상: `app.main:app`. 코디세이 API를 서버에서 호출한다. 날짜: 2026-10-19.
+실행 대상: `app.main:app`. 코디세이 API를 서버에서 호출한다. 날짜: 2026-10-21. B의 자원 라우터와 C의 채팅 라우터는 분리돼 있으며 외부 API URL은 유지한다.
 
 ## 인증·오류
 
-같은 출처의 서명된 HttpOnly 세션 쿠키를 사용한다. 인증은 기존 `app/routers/auth.py`와 bcrypt를 재사용한다. API에서 인증 사용자 ID를 결정하며 브라우저가 보낸 user_id는 권한 근거로 받지 않는다. 운영 HTTPS에서 `SESSION_HTTPS_ONLY=true`를 설정한다. 로그아웃은 쿠키를 지우는 방식으로, 탈취한 서명 쿠키의 서버 측 개별 폐기는 초기 범위에 없다.
+같은 출처의 서명된 HttpOnly 세션 쿠키를 사용한다. 인증 입력 규격은 app/schemas/accounts.py, 계정 처리는 app/services/accounts.py, HTTP/세션 처리는 app/routers/auth.py에 분리했다. 새 비밀번호는 scrypt로 저장하고 기존 bcrypt 계정은 정상 로그인 후 갱신한다. API에서 인증 사용자 ID를 결정하며 브라우저가 보낸 user_id는 권한 근거로 받지 않는다. 운영 HTTPS에서 `SESSION_HTTPS_ONLY=true`를 설정한다. 로그아웃은 쿠키를 지우는 방식으로, 탈취한 서명 쿠키의 서버 측 개별 폐기는 초기 범위에 없다.
 
 오류 예시:
 
@@ -83,4 +83,4 @@
 
 사용자·대화방·질문/응답·대본 버전을 분리하여 관리한다. 웹 절은 `locator={type:"html_section",heading:...}`로 기록한다. 웹 도구로 PDF 본문의 위치를 확인한 카드는 `locator={type:"pdf_pages",heading:...,pdf_page_start:10,pdf_page_end:10}`을 사용하며 파일 첫 페이지가 1인 기준이다. references에는 pdf_url, pdf_page_start/end, limitations, application_notes, research_topic_ids가 추가된다. PDF를 열람한 것과 로컬 파일을 확보한 것은 구분하며 바이트 해시는 미확보 상태다. 원문 없는 설명은 확인 불가 안내를 반환한다.
 
-질문 1~6000자, 각 기획 문자열 최대 300자, 길이 10~180초는 제품의 초기 지원 범위다. 인스타그램 공식 길이 제한을 의미하지 않는다. 모델/클라이언트의 임의 confirmed=true는 거절한다. 원본 제작 조건은 최근 Q/A와 별도 저장하므로 대화가 길어져도 유지한다.
+질문 1~6000자, 각 기획 문자열 최대 300자, 길이 10~180초는 제품의 초기 지원 범위다. 개별 플랫폼 공식 길이 제한을 의미하지 않는다. 모델/클라이언트의 임의 confirmed=true는 거절한다. 원본 제작 조건은 최근 Q/A와 별도 저장하므로 대화가 길어져도 유지한다.

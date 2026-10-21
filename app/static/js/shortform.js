@@ -155,7 +155,7 @@ $('more-history').addEventListener('click',()=>run(()=>loadHistory(true)));
 $('more-conversations').addEventListener('click',()=>run(()=>loadList(true)));
 $('refresh-conversation').addEventListener('click',()=>run(()=>selectConversation(state.conversation.conversation_id)));
 run(async()=>{
-  const user = await apiRequest('/api/me'); state.userKey=`reels-conversation-${user.id}`;
+  const user = await apiRequest('/api/me'); state.userKey=`shortform-conversation-${user.id}`;
   const list = await loadList(); const saved=Number(localStorage.getItem(state.userKey));
   if (saved) {
     try {await selectConversation(saved);return;} catch (error) {if(error.status!==404) throw error;}

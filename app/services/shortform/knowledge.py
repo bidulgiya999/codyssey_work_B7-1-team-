@@ -5,7 +5,7 @@ import re
 import unicodedata
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "reels"
+DATA_DIR = Path(__file__).resolve().parents[2] / "data" / "shortform"
 ALLOWED_LICENSES = {"CC BY 4.0", "CC BY-NC 4.0", "CC BY-NC-SA 4.0"}
 
 

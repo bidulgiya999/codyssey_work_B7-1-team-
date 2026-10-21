@@ -22,6 +22,6 @@
 | creativity-criteria | Dean Keith Simonton, Creativity, Noba | CC BY-NC-SA 4.0 |
 | attention-selection | Frances Friedrich, Attention, Noba | CC BY-NC-SA 4.0 |
 
-모든 추가 카드는 원문의 짧은 한국어 요약과 별도로 표시한 팀의 릴스 제작 제안으로 수정했다. [정확한 원문·PDF 링크와 검토 범위](../../../docs/KNOWLEDGE.md), [카드별 변경·제한·위치](cards.jsonl), [저자·라이선스 URL](sources.json)을 유지한다. CC BY-NC-SA 카드의 수정·공유는 같은 조건을 유지한다. 원문 전체·문학 예문·사진·영상·도표는 재배포하지 않는다. PDF 쪽수는 웹 도구로 확인한 1 기준 위치이며 로컬 PDF 바이트 해시는 확보하지 않았다.
+모든 추가 카드는 원문의 짧은 한국어 요약과 별도로 표시한 팀의 숏폼 제작 제안으로 수정했다. [정확한 원문·PDF 링크와 검토 범위](../../../docs/KNOWLEDGE.md), [카드별 변경·제한·위치](cards.jsonl), [저자·라이선스 URL](sources.json)을 유지한다. CC BY-NC-SA 카드의 수정·공유는 같은 조건을 유지한다. 원문 전체·문학 예문·사진·영상·도표는 재배포하지 않는다. PDF 쪽수는 웹 도구로 확인한 1 기준 위치이며 로컬 PDF 바이트 해시는 확보하지 않았다.
 
 운영 기본 범위는 교육용 비상업이다. `KNOWLEDGE_USAGE_SCOPE=commercial`은 NC 카드를 제외한다. 이 스위치가 다른 권리·개별 예외까지 검토해 주는 것은 아니다.

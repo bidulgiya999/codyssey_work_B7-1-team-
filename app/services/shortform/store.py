@@ -8,8 +8,8 @@ from sqlalchemy import or_, select, update
 from sqlalchemy.orm import Session
 
 from app.errors import APIError
-from app.models.reels import Conversation, ReelsScript, ReelsTurn
-from app.services.reels.schemas import Brief, ChatRequest
+from app.models.shortform import Conversation, ScriptVersion, ConversationTurn
+from app.services.shortform.schemas import Brief, ChatRequest
 
 logger = logging.getLogger(__name__)
 
@@ -34,16 +34,16 @@ def owned(db: Session, user_id: int, conversation_id: int) -> Conversation:
     return item
 
 
-def script_payload(script: ReelsScript | None) -> dict | None:
+def script_payload(script: ScriptVersion | None) -> dict | None:
     if script is None:
         return None
     return {**json.loads(script.content_json), "script_id": script.id, "revision": script.revision,
             "parent_script_id": script.parent_script_id, "references": json.loads(script.references_json)}
 
 
-def latest_script(db: Session, conversation_id: int) -> ReelsScript | None:
-    return db.scalar(select(ReelsScript).where(ReelsScript.conversation_id == conversation_id)
-                     .order_by(ReelsScript.revision.desc()).limit(1))
+def latest_script(db: Session, conversation_id: int) -> ScriptVersion | None:
+    return db.scalar(select(ScriptVersion).where(ScriptVersion.conversation_id == conversation_id)
+                     .order_by(ScriptVersion.revision.desc()).limit(1))
 
 
 def conversation_payload(db: Session, item: Conversation) -> dict:
@@ -83,20 +83,20 @@ def begin_turn(db: Session, user_id: int, body: ChatRequest, request_id: str, le
         raise APIError(409, "CONVERSATION_CONFLICT", "다른 요청이 처리 중이거나 기획이 변경되었습니다. 대화를 다시 불러와 주세요.")
     # Recover a request whose owner process died. A late completion cannot pass
     # complete_turn's active_request_id comparison after this point.
-    db.execute(update(ReelsTurn).where(ReelsTurn.conversation_id == body.conversation_id,
-                                      ReelsTurn.status == "processing")
+    db.execute(update(ConversationTurn).where(ConversationTurn.conversation_id == body.conversation_id,
+                                      ConversationTurn.status == "processing")
                .values(status="error", error_code="REQUEST_EXPIRED"))
     item = owned(db, user_id, body.conversation_id)
     previous_script = script_payload(latest_script(db, item.id))
     if body.action == "revise" and (not previous_script or previous_script["script_id"] != body.base_script_id):
         db.rollback()
         raise APIError(409, "SCRIPT_CONFLICT", "현재 대본을 다시 불러온 뒤 수정해 주세요.")
-    recent = db.scalars(select(ReelsTurn).where(ReelsTurn.conversation_id == item.id,
-                                               ReelsTurn.user_id == user_id, ReelsTurn.status == "success")
-                        .order_by(ReelsTurn.id.desc()).limit(5)).all()
+    recent = db.scalars(select(ConversationTurn).where(ConversationTurn.conversation_id == item.id,
+                                               ConversationTurn.user_id == user_id, ConversationTurn.status == "success")
+                        .order_by(ConversationTurn.id.desc()).limit(5)).all()
     context_values = (item.id, item.version, item.phase, Brief.model_validate_json(item.brief_json),
                       [{"question": t.question, "answer": t.answer} for t in reversed(recent)], previous_script)
-    turn = ReelsTurn(conversation_id=item.id, user_id=user_id, request_id=request_id,
+    turn = ConversationTurn(conversation_id=item.id, user_id=user_id, request_id=request_id,
                      action=body.action, question=body.message, status="processing")
     db.add(turn)
     db.flush()
@@ -122,7 +122,7 @@ def complete_turn(db: Session, context: TurnContext, request_id: str, payload: d
         conversation.title = data["brief"]["topic"][:100]
     if data["script"] is not None:
         previous = context.latest_script
-        script = ReelsScript(conversation_id=context.conversation_id, turn_id=context.turn_id,
+        script = ScriptVersion(conversation_id=context.conversation_id, turn_id=context.turn_id,
                              revision=(previous["revision"] + 1) if previous else 1,
                              parent_script_id=previous["script_id"] if previous else None,
                              brief_json=encode(data["brief"]), content_json=encode(data["script"]),
@@ -132,8 +132,8 @@ def complete_turn(db: Session, context: TurnContext, request_id: str, payload: d
         data["script"] = script_payload(script)
     data.update(chat_id=context.turn_id, conversation_id=context.conversation_id,
                 version=context.version + 1, request_id=request_id)
-    db.execute(update(ReelsTurn).where(ReelsTurn.id == context.turn_id, ReelsTurn.request_id == request_id,
-                                      ReelsTurn.status == "processing")
+    db.execute(update(ConversationTurn).where(ConversationTurn.id == context.turn_id, ConversationTurn.request_id == request_id,
+                                      ConversationTurn.status == "processing")
                .values(answer=data["answer"], response_json=encode(data), status="success"))
     db.commit()
     logger.info("db_save_success conversation_id=%s chat_id=%s request_id=%s status=success", context.conversation_id, context.turn_id, request_id)
@@ -145,8 +145,8 @@ def fail_turn(db: Session, context: TurnContext, request_id: str, error_code: st
     db.execute(update(Conversation).where(Conversation.id == context.conversation_id,
                                          Conversation.active_request_id == request_id)
                .values(active_request_id=None, active_until=None))
-    db.execute(update(ReelsTurn).where(ReelsTurn.id == context.turn_id, ReelsTurn.request_id == request_id,
-                                      ReelsTurn.status == "processing")
+    db.execute(update(ConversationTurn).where(ConversationTurn.id == context.turn_id, ConversationTurn.request_id == request_id,
+                                      ConversationTurn.status == "processing")
                .values(status="timeout" if error_code == "AI_TIMEOUT" else "error", error_code=error_code))
     db.commit()
     logger.info("db_save_success conversation_id=%s chat_id=%s request_id=%s status=failure_recorded", context.conversation_id, context.turn_id, request_id)

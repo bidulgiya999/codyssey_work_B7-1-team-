@@ -5,9 +5,10 @@ from collections.abc import Awaitable, Callable
 
 from pydantic import ValidationError
 
-from app.services.reels.knowledge import KnowledgeBase
-from app.services.reels.research import load_research_agenda
-from app.services.reels.schemas import Brief, Extraction, FollowUp, ScriptDraft
+from app.services.shortform.knowledge import KnowledgeBase
+from app.services.shortform.research import load_research_agenda
+from app.services.shortform.schemas import Brief, Extraction, FollowUp, ScriptDraft
+from app.services.shortform.structures import select_structures
 
 
 class CoachError(Exception):
@@ -28,7 +29,7 @@ QUESTIONS = {
     "core_message": ("영상에서 가장 전하고 싶은 생각을 한 문장으로 표현해 볼까요?", []),
 }
 
-SYSTEM = """당신은 영상 구조·연출을 함께 고민하는 한국어 릴스 대본 코치다.
+SYSTEM = """당신은 영상 구조·연출을 함께 고민하는 한국어 인스타 릴스 대본 코치다.
 구조를 먼저 강제하지 말고 주제·목적·시청자·연령·길이·등장 방식·연출·핵심 메시지를 이해한다.
 연령만으로 취향을 단정하지 않는다. 부족한 정보는 한 번에 최대 두 항목만 자연스럽게 묻는다.
 사용자가 이미 말한 정보는 다시 묻지 않는다. '없음'과 '미정'을 구분한다.
@@ -82,7 +83,7 @@ def summarize(brief: Brief) -> str:
             "이 조건을 확인한 뒤 ‘이 조건으로 대본 작성’을 눌러 주세요.")
 
 
-class ReelsCoach:
+class ShortformCoach:
     def __init__(self, knowledge: KnowledgeBase,
                  ask: Callable[[str, list[dict]], Awaitable[str]], *, timeout: float = 55):
         self.knowledge, self.ask, self.timeout = knowledge, ask, timeout
@@ -110,6 +111,7 @@ class ReelsCoach:
             raise CoachError("KNOWLEDGE_NOT_READY", "사용할 수 있는 이론 자료를 준비 중입니다.", 503)
         data = {"brief": brief.model_dump(), "phase": phase, "reference_cards": cards,
                 "research_agenda": self.research_agenda,
+                "structure_options": select_structures(brief) if action != "message" else [],
                 "latest_script": latest_script}
         output_model = Extraction if action == "message" else ScriptDraft
         if action == "message":
@@ -124,6 +126,7 @@ class ReelsCoach:
                            "follow_up_questions는 비어 있는 항목만 최대 두 개. 조건이 충분하면 빈 목록.")
         else:
             instruction = ("확인된 제작 조건에 맞는 장면별 대본을 작성한다. "
+                           "structure_options는 팀의 제작 제안이다. 조건에 맞는 후보를 선택하거나 변형하고 structure.reason에 이유를 쓴다. 학술 근거는 reference_cards만 사용한다. "
                            "목표 길이에 필요한 장면만 구성하고, 장면별 visual과 direction은 각각 한두 문장으로 구체적이고 간결하게 쓴다. 같은 설명을 반복하지 않는다. "
                            "모든 장면 시간은 정수 초이며 0초부터 목표 길이까지 빈틈·겹침 없이 이어진다. "
                            "rationale에는 제공된 카드 ID와 실제 장면 번호만 넣어 선택 이유와 적용 한계를 설명한다. "

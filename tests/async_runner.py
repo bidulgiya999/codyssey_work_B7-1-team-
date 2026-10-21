@@ -30,7 +30,7 @@ class MemoryLoop(asyncio.SelectorEventLoop):
 
 
 def run(coroutine):
-    if os.environ.get("REELS_TEST_MEMORY_LOOP") == "1":
+    if os.environ.get("SHORTFORM_TEST_MEMORY_LOOP") == "1":
         with asyncio.Runner(loop_factory=MemoryLoop) as runner:
             return runner.run(coroutine)
     return asyncio.run(coroutine)

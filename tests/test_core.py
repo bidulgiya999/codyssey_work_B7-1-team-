@@ -8,10 +8,10 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from app.services.reels.coach import CoachError, ReelsCoach, make_messages
-from app.services.reels.knowledge import DATA_DIR, KnowledgeBase
-from app.services.reels.research import load_research_agenda
-from app.services.reels.schemas import Brief, ChatRequest, ScriptDraft
+from app.services.shortform.coach import CoachError, ShortformCoach, make_messages
+from app.services.shortform.knowledge import DATA_DIR, KnowledgeBase
+from app.services.shortform.research import load_research_agenda
+from app.services.shortform.schemas import Brief, ChatRequest, ScriptDraft
 from async_runner import run
 
 
@@ -43,7 +43,7 @@ class CoreTests(unittest.TestCase):
             return json.dumps(output,ensure_ascii=False) if not isinstance(output,str) else output
         args=dict(action="message",message="아침 메뉴를 알려주고 싶어요",brief=Brief(),phase="briefing",history=[])
         args.update(kwargs)
-        result=run(ReelsCoach(self.kb,ask).process(**args))
+        result=run(ShortformCoach(self.kb,ask).process(**args))
         return result,calls
 
     def test_blank_or_oversized_messages_are_rejected(self):
@@ -140,7 +140,7 @@ class CoreTests(unittest.TestCase):
                 data["evidence_status"] = "proven"
             else:
                 data["topics"][1]["id"] = data["topics"][0]["id"]
-            with tempfile.TemporaryDirectory(dir=os.environ.get("REELS_TEST_TMPDIR")) as folder:
+            with tempfile.TemporaryDirectory(dir=os.environ.get("SHORTFORM_TEST_TMPDIR")) as folder:
                 path = Path(folder) / "agenda.json"
                 path.write_text(json.dumps(data), encoding="utf-8")
                 with self.assertRaises(ValueError):
@@ -167,7 +167,7 @@ class CoreTests(unittest.TestCase):
         async def stalled(system,messages):
             await asyncio.sleep(1)
         with self.assertRaises(CoachError) as error:
-            run(ReelsCoach(self.kb,stalled,timeout=.01).process(action="generate",message="작성",brief=brief,phase="ready",history=[]))
+            run(ShortformCoach(self.kb,stalled,timeout=.01).process(action="generate",message="작성",brief=brief,phase="ready",history=[]))
         self.assertEqual(error.exception.code,"AI_TIMEOUT")
         self.assertFalse(brief.confirmed)
 
@@ -204,7 +204,7 @@ class CoreTests(unittest.TestCase):
         self.assertLessEqual(len(self.kb.search("대본 구조 연출 시청자")),3)
 
     def test_unreviewed_cards_are_excluded(self):
-        with tempfile.TemporaryDirectory(dir=os.environ.get("REELS_TEST_TMPDIR")) as folder:
+        with tempfile.TemporaryDirectory(dir=os.environ.get("SHORTFORM_TEST_TMPDIR")) as folder:
             path=Path(folder)
             (path/"sources.json").write_bytes((DATA_DIR/"sources.json").read_bytes())
             data=dict(self.kb.cards[0]);data["review_status"]="draft"
@@ -261,7 +261,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual((ref["pdf_page_start"], ref["pdf_page_end"]), (10, 10))
         self.assertEqual(ref["url"], ref["pdf_url"])
         self.assertIsNone(self.kb.sources[ref["source_id"]]["source_sha256"])
-        with tempfile.TemporaryDirectory(dir=os.environ.get("REELS_TEST_TMPDIR")) as folder:
+        with tempfile.TemporaryDirectory(dir=os.environ.get("SHORTFORM_TEST_TMPDIR")) as folder:
             path = Path(folder)
             (path / "sources.json").write_bytes((DATA_DIR / "sources.json").read_bytes())
             damaged = dict(next(c for c in cards if c["card_id"] == "suspense-anticipation"))
@@ -271,7 +271,7 @@ class CoreTests(unittest.TestCase):
                 KnowledgeBase(path)
 
     def test_unapproved_license_is_not_retrieved(self):
-        with tempfile.TemporaryDirectory(dir=os.environ.get("REELS_TEST_TMPDIR")) as folder:
+        with tempfile.TemporaryDirectory(dir=os.environ.get("SHORTFORM_TEST_TMPDIR")) as folder:
             path = Path(folder)
             source = dict(self.kb.sources["media-studies-101"])
             source["license"] = "CC BY-NC-ND 4.0"

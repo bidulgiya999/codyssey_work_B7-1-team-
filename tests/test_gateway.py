@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from async_runner import run
 
-os.environ["SECRET_KEY"]="test-only-reels-secret-at-least-32"
+os.environ["SECRET_KEY"]="test-only-shortform-secret-at-least-32"
 os.environ["LLM_API_KEY"]=""
 AVAILABLE=bool(importlib.util.find_spec("httpx") and importlib.util.find_spec("pydantic_settings"))
 if AVAILABLE:
@@ -23,7 +23,7 @@ class CodysseyGatewayTests(unittest.TestCase):
         transport=httpx.MockTransport(handler)
         def factory(**kwargs):return original(transport=transport,**kwargs)
         with patch.object(settings,"LLM_API_KEY","test-only-key"),patch.object(settings,"LLM_API_STYLE",style),patch.object(llm.httpx,"AsyncClient",side_effect=factory):
-            return run(llm.ask_llm("JSON 객체로 답해 주세요.",[{"role":"user","content":"릴스 기획"}]))
+            return run(llm.ask_llm("JSON 객체로 답해 주세요.",[{"role":"user","content":"숏폼 기획"}]))
 
     def test_codyssey_endpoint_model_auth_and_default_contract(self):
         seen=[]
@@ -110,7 +110,7 @@ class CodysseyGatewayTests(unittest.TestCase):
         self.assertEqual(request.headers["anthropic-version"], "2023-06-01")
         self.assertNotIn("Authorization", request.headers)
         self.assertEqual(body["system"], "JSON 객체로 답해 주세요.")
-        self.assertEqual(body["messages"], [{"role": "user", "content": "릴스 기획"}])
+        self.assertEqual(body["messages"], [{"role": "user", "content": "숏폼 기획"}])
         self.assertEqual(body["model"], settings.LLM_MODEL)
         self.assertEqual(body["max_tokens"], settings.LLM_MAX_COMPLETION_TOKENS)
         self.assertNotIn("max_completion_tokens", body)

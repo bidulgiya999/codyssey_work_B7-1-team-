@@ -17,14 +17,14 @@ from app.config import settings
 from app.database import Base, engine
 from app.dependencies import get_current_user
 from app.errors import APIError
-from app.models import reels as reels_models  # noqa: F401
-from app.routers import auth, reels
-from app.services.reels.knowledge import KnowledgeBase
+from app.models import shortform as shortform_models  # noqa: F401
+from app.routers import auth, conversations, shortform
+from app.services.shortform.knowledge import KnowledgeBase
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger(__name__)
 APP_DIR = Path(__file__).resolve().parent
-templates = Jinja2Templates(directory=str(APP_DIR / "templates" / "reels"))
+templates = Jinja2Templates(directory=str(APP_DIR / "templates" / "shortform"))
 
 
 @asynccontextmanager
@@ -34,14 +34,15 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="릴스 대본 코치", lifespan=lifespan,
+app = FastAPI(title="인스타 릴스 대본 코치", lifespan=lifespan,
               docs_url="/docs" if settings.ENABLE_API_DOCS else None,
               redoc_url=None, openapi_url="/openapi.json" if settings.ENABLE_API_DOCS else None)
 app.add_middleware(SessionMiddleware, secret_key=settings.SECRET_KEY, same_site="lax",
                    https_only=settings.SESSION_HTTPS_ONLY, max_age=8 * 60 * 60)
 app.mount("/static", StaticFiles(directory=str(APP_DIR / "static")), name="static")
 app.include_router(auth.router)
-app.include_router(reels.router)
+app.include_router(conversations.router)
+app.include_router(shortform.router)
 
 
 @app.middleware("http")
@@ -107,4 +108,4 @@ def history_page():
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "reels-coach"}
+    return {"status": "ok", "service": "shortform-coach"}
